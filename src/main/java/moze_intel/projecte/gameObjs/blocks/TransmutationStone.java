@@ -84,10 +84,10 @@ public class TransmutationStone extends DirectionalBlock implements SimpleWaterl
 	@Override
 	@Deprecated
 	protected InteractionResult useWithoutItem(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult rtr) {
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
 			player.openMenu(new ContainerProvider(), b -> b.writeBoolean(false));
 		}
-		return InteractionResult.sidedSuccess(level.isClientSide);
+		return InteractionResult.SUCCESS;
 	}
 
 	@Nullable
@@ -107,12 +107,11 @@ public class TransmutationStone extends DirectionalBlock implements SimpleWaterl
 	@NotNull
 	@Override
 	@Deprecated
-	public BlockState updateShape(@NotNull BlockState state, @NotNull Direction facing, @NotNull BlockState facingState, @NotNull LevelAccessor level,
-			@NotNull BlockPos currentPos, @NotNull BlockPos facingPos) {
+	public BlockState updateShape(@NotNull BlockState state, net.minecraft.world.level.LevelReader level, net.minecraft.world.level.ScheduledTickAccess ticks, BlockPos currentPos, Direction facing, BlockPos facingPos, BlockState facingState, net.minecraft.util.RandomSource random) {
 		if (state.getValue(BlockStateProperties.WATERLOGGED)) {
-			level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+			ticks.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
 		}
-		return super.updateShape(state, facing, facingState, level, currentPos, facingPos);
+		return super.updateShape(state, level, ticks, currentPos, facing, facingPos, facingState, random);
 	}
 
 	@NotNull

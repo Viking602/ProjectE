@@ -70,7 +70,7 @@ public final class EMCMappingHandler {
 	public static void map(ReloadableServerResources serverResources, RegistryAccess registryAccess, ResourceManager resourceManager) {
 		//Start by clearing the cached map so if values are removed say by setting EMC to zero then we respect the change
 		clearEmcMap();
-		SimpleGraphMapper<NormalizedSimpleStack, BigFraction, IValueArithmetic<BigFraction>> mapper = new SimpleGraphMapper<>(new HiddenBigFractionArithmetic());
+		SimpleGraphMapper<NormalizedSimpleStack, BigFraction, IValueArithmetic<BigFraction>> mapper = new SimpleGraphMapper<>(new HiddenBigFractionArithmetic(), true);
 		BigFractionToLongGenerator<NormalizedSimpleStack> valueGenerator = new BigFractionToLongGenerator<>(mapper);
 		IExtendedMappingCollector<NormalizedSimpleStack, Long, IValueArithmetic<BigFraction>> mappingCollector = new LongToBigFractionCollector<>(mapper);
 
@@ -103,6 +103,7 @@ public final class EMCMappingHandler {
 			DumpToFileCollector.currentGroupName = "NSSHelper";
 
 			PECore.debugLog("Mapping Collection finished");
+			RecipeEmcValidator.excludeFractionalReversals(mappingCollector, serverResources.getRecipeManager(), registryAccess);
 			mappingCollector.finishCollection(registryAccess);
 
 			PECore.debugLog("Starting to generate Values:");
@@ -111,6 +112,24 @@ public final class EMCMappingHandler {
 
 			updateEmcValues(filterEMCMap(graphMapperValues));
 			PECore.debugLog("Filtered Values...");
+			MinecraftServer activeServer = ServerLifecycleHooks.getCurrentServer();
+			if (activeServer != null && activeServer.overworld() != null) {
+				// Feed corrected integer prices back through all mappers, including fluids/chemicals.
+				boolean corrected;
+				do {
+					Object2LongMap<ItemInfo> before = new Object2LongOpenHashMap<>(emc);
+					RecipeEmcValidator.validate(emc, serverResources.getRecipeManager(), activeServer.overworld());
+					corrected = false;
+					for (var entry : before.object2LongEntrySet()) {
+						long value = emc.getLong(entry.getKey());
+						if (value < entry.getLongValue()) {
+							mapper.setValueBefore(NSSItem.createItem(entry.getKey().createStack()), new BigFraction(value));
+							corrected = true;
+						}
+					}
+					if (corrected) updateEmcValues(filterEMCMap(valueGenerator.generateValues()));
+				} while (corrected);
+			}
 
 			if (usePregenerated && emc != null) {//Note: It should never be null here as we just set it
 				//Should have used pregenerated, but the file was not read => regenerate.
@@ -119,6 +138,11 @@ public final class EMCMappingHandler {
 			}
 		}
 
+		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+		if (readPregeneratedValues.isPresent() && emc != null && server != null && server.overworld() != null) {
+			RecipeEmcValidator.validate(emc, serverResources.getRecipeManager(), server.overworld());
+			if (usePregenerated) PregeneratedEMC.write(registryAccess, pregeneratedEmcFile, emc);
+		}
 		fireEmcRemapEvent();
 	}
 

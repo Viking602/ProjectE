@@ -18,7 +18,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -32,7 +32,7 @@ public class GemHelmet extends GemArmorBase {
 	private static final boolean NIGHT_VISION_DEFAULT = false;
 
 	public GemHelmet(Properties props) {
-		super(ArmorItem.Type.HELMET, props.component(PEDataComponentTypes.NIGHT_VISION, NIGHT_VISION_DEFAULT));
+		super(ArmorType.HELMET, props.component(PEDataComponentTypes.NIGHT_VISION, NIGHT_VISION_DEFAULT));
 	}
 
 	public static void toggleNightVision(ItemStack helm, Player player) {
@@ -42,11 +42,11 @@ public class GemHelmet extends GemArmorBase {
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, @NotNull List<Component> tooltip, @NotNull TooltipFlag flags) {
-		super.appendHoverText(stack, context, tooltip, flags);
-		tooltip.add(PELang.GEM_LORE_HELM.translate());
-		tooltip.add(PELang.NIGHT_VISION_PROMPT.translate(ClientKeyHelper.getKeyName(PEKeybind.HELMET_TOGGLE)));
-		tooltip.add(getComponent(hasNightVision(stack)));
+	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, net.minecraft.world.item.component.TooltipDisplay display, java.util.function.Consumer<Component> tooltip, @NotNull TooltipFlag flags) {
+		super.appendHoverText(stack, context, display, tooltip, flags);
+		tooltip.accept(PELang.GEM_LORE_HELM.translate());
+		tooltip.accept(PELang.NIGHT_VISION_PROMPT.translate(ClientKeyHelper.getKeyName(PEKeybind.HELMET_TOGGLE)));
+		tooltip.accept(getComponent(hasNightVision(stack)));
 	}
 
 	private static boolean hasNightVision(ItemStack stack) {
@@ -61,9 +61,10 @@ public class GemHelmet extends GemArmorBase {
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slot, boolean isHeld) {
-		super.inventoryTick(stack, level, entity, slot, isHeld);
-		if (isArmorSlot(slot) && !level.isClientSide && entity instanceof Player player) {
+	public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.server.level.ServerLevel level, @NotNull Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+		super.inventoryTick(stack, level, entity, slot);
+		boolean isHeld = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+		if (isArmorSlot(slot) && !level.isClientSide() && entity instanceof Player player) {
 			if (PlayerHelper.checkHealCooldown(player)) {
 				player.heal(2.0F);
 			}
@@ -82,9 +83,9 @@ public class GemHelmet extends GemArmorBase {
 			if (strikeResult.getType() != HitResult.Type.MISS) {
 				BlockPos strikePos = strikeResult.getBlockPos();
 				Level level = player.level();
-				LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
+				LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
 				if (lightning != null) {
-					lightning.moveTo(strikePos.getCenter());
+					lightning.setPos(strikePos.getCenter());
 					lightning.setCause((ServerPlayer) player);
 					level.addFreshEntity(lightning);
 				}

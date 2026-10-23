@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "D": {
-      "item": "projecte:dm_boots"
-    },
-    "M": {
-      "item": "projecte:red_matter"
-    }
+    "D": "projecte:dm_boots",
+    "M": "projecte:red_matter"
   },
   "pattern": [
     "MDM",

@@ -38,7 +38,7 @@ public class SmithingRecipeMapper extends BaseRecipeTypeMapper {
 	protected Collection<Ingredient> getIngredients(Recipe<?> recipe) {
 		//Smithing recipes don't implement getIngredient with the inputs, so we need to fake it
 		if (recipe instanceof SmithingTransformRecipe transformRecipe) {
-			return List.of(transformRecipe.base, transformRecipe.addition, transformRecipe.template);
+			return transformRecipe.placementInfo().ingredients();
 		} else if (recipe instanceof SmithingTrimRecipe trimRecipe) {
 			return List.of(trimRecipe.base, trimRecipe.addition, trimRecipe.template);
 		}

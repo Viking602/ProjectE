@@ -24,7 +24,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.neoforge.capabilities.Capabilities.ItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
@@ -43,9 +43,10 @@ public class RepairTalisman extends ItemPE implements IAlchBagItem, IAlchChestIt
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slot, boolean isHeld) {
-		super.inventoryTick(stack, level, entity, slot, isHeld);
-		if (!level.isClientSide && entity instanceof Player player && PlayerHelper.checkCooldown(player, this, ProjectEConfig.server.cooldown.player.repair)) {
+	public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.server.level.ServerLevel level, @NotNull Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+		super.inventoryTick(stack, level, entity, slot);
+		boolean isHeld = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+		if (!level.isClientSide() && entity instanceof Player player && PlayerHelper.checkCooldown(player, this, ProjectEConfig.server.cooldown.player.repair)) {
 			repairAllItems(player);
 		}
 	}
@@ -53,7 +54,7 @@ public class RepairTalisman extends ItemPE implements IAlchBagItem, IAlchChestIt
 	@Override
 	public <PEDESTAL extends BlockEntity & IDMPedestal> boolean updateInPedestal(@NotNull ItemStack stack, @NotNull Level level, @NotNull BlockPos pos,
 			@NotNull PEDESTAL pedestal) {
-		if (!level.isClientSide && ProjectEConfig.server.cooldown.pedestal.repair.get() != -1) {
+		if (!level.isClientSide() && ProjectEConfig.server.cooldown.pedestal.repair.get() != -1) {
 			if (pedestal.getActivityCooldown() == 0) {
 				level.getEntitiesOfClass(Player.class, pedestal.getEffectBounds()).forEach(RepairTalisman::repairAllItems);
 				pedestal.setActivityCooldown(level, pos, ProjectEConfig.server.cooldown.pedestal.repair.get());
@@ -77,8 +78,8 @@ public class RepairTalisman extends ItemPE implements IAlchBagItem, IAlchChestIt
 
 	@Override
 	public boolean updateInAlchChest(@NotNull Level level, @NotNull BlockPos pos, @NotNull ItemStack stack) {
-		if (!level.isClientSide) {
-			IItemHandler inv = WorldHelper.getCapability(level, ItemHandler.BLOCK, pos, null);
+		if (!level.isClientSide()) {
+			IItemHandler inv = moze_intel.projecte.utils.ItemTransferAdapter.legacy(WorldHelper.getCapability(level, Capabilities.Item.BLOCK, pos, null));
 			if (inv != null) {
 				return updateInHandler(inv, stack);
 			}
@@ -88,7 +89,7 @@ public class RepairTalisman extends ItemPE implements IAlchBagItem, IAlchChestIt
 
 	@Override
 	public boolean updateInAlchBag(@NotNull IItemHandler inv, @NotNull Player player, @NotNull ItemStack stack) {
-		return !player.level().isClientSide && updateInHandler(inv, stack);
+		return !player.level().isClientSide() && updateInHandler(inv, stack);
 	}
 
 	private boolean updateInHandler(@NotNull IItemHandler inv, @NotNull ItemStack stack) {
@@ -109,19 +110,21 @@ public class RepairTalisman extends ItemPE implements IAlchBagItem, IAlchChestIt
 	}
 
 	private static void repairAllItems(Player player) {
-		repairAllItems(player.getCapability(ItemHandler.ENTITY), player, CAN_REPAIR_PLAYER_ITEM);
-		repairAllItems(player.getCapability(IntegrationHelper.CURIO_ITEM_HANDLER), player, CAN_REPAIR_PLAYER_ITEM);
+		repairAllItems(new net.neoforged.neoforge.items.wrapper.PlayerInvWrapper(player.getInventory()), player, CAN_REPAIR_PLAYER_ITEM);
+		repairAllItems(IntegrationHelper.getEquippedCurios(player), player, CAN_REPAIR_PLAYER_ITEM);
 	}
 
 	private static <DATA> boolean repairAllItems(@Nullable IItemHandler inv, DATA data, BiPredicate<ItemStack, DATA> canRepairStack) {
-		if (inv == null) {
+		if (!(inv instanceof net.neoforged.neoforge.items.IItemHandlerModifiable writable)) {
 			return false;
 		}
 		boolean hasAction = false;
 		for (int i = 0, slots = inv.getSlots(); i < slots; i++) {
 			ItemStack invStack = inv.getStackInSlot(i);
 			if (canRepairStack.test(invStack, data)) {
-				invStack.setDamageValue(invStack.getDamageValue() - 1);
+				ItemStack repaired = invStack.copy();
+				repaired.setDamageValue(repaired.getDamageValue() - 1);
+				writable.setStackInSlot(i, repaired);
 				if (!hasAction) {
 					hasAction = true;
 				}

@@ -81,7 +81,7 @@ public class PECustomConversionProvider extends CustomConversionProvider {
 				// A star with no color and default shape would line up to just being gunpowder
 				.conversion(Items.FIREWORK_STAR).ingredient(Items.GUNPOWDER).end()
 				// A rocket with no explosion and default flight duration would just be a piece of paper and gunpowder
-				.conversion(Items.FIREWORK_ROCKET).ingredient(Items.PAPER).ingredient(Items.GUNPOWDER).end()
+				.conversion(Items.FIREWORK_ROCKET, 3).ingredient(Items.PAPER).ingredient(Items.GUNPOWDER).end()
 				//Note: suspicious blocks only can be gotten by them falling for over thirty seconds (for example bubble column)
 				// and don't keep their loot if placed by a player, so we can just set them as the same as the normal block they
 				// turn into after brushing
@@ -319,9 +319,7 @@ public class PECustomConversionProvider extends CustomConversionProvider {
 				.before(Items.HEART_OF_THE_SEA, 32_768)
 				.before(Items.HEAVY_CORE, 40_960)
 				.before(Items.DRAGON_EGG, 262_144)
-				.before(Items.SADDLE, 192)
 				.before(Items.ECHO_SHARD, 192)
-				.before(Items.NAME_TAG, 192)
 				.before(ItemTags.CREEPER_DROP_MUSIC_DISCS, 2_048)
 				.before(Items.DISC_FRAGMENT_5, 192)
 				.before(Items.MUSIC_DISC_CREATOR, 40_960)

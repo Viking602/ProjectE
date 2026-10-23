@@ -14,27 +14,27 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
-import net.minecraft.world.item.crafting.TippedArrowRecipe;
+import net.minecraft.world.item.crafting.ImbueRecipe;
 
 @RecipeTypeMapper
-public class TippedArrowMapper extends SpecialRecipeMapper<TippedArrowRecipe> {
+public class TippedArrowMapper extends SpecialRecipeMapper<ImbueRecipe> {
 
-	private static final ResourceLocation TIPPED_ARROW = BuiltInRegistries.ITEM.getKey(Items.TIPPED_ARROW);
-	private static final ResourceLocation LINGERING_POTION = BuiltInRegistries.ITEM.getKey(Items.LINGERING_POTION);
+	private static final Identifier TIPPED_ARROW = BuiltInRegistries.ITEM.getKey(Items.TIPPED_ARROW);
+	private static final Identifier LINGERING_POTION = BuiltInRegistries.ITEM.getKey(Items.LINGERING_POTION);
 
 	@Override
-	protected Class<TippedArrowRecipe> getRecipeClass() {
-		return TippedArrowRecipe.class;
+	protected Class<ImbueRecipe> getRecipeClass() {
+		return ImbueRecipe.class;
 	}
 
 	@Override
 	protected boolean handleRecipe(IMappingCollector<NormalizedSimpleStack, Long> mapper, RegistryAccess registryAccess, INSSFakeGroupManager fakeGroupManager) {
 		NSSItem nssArrow = NSSItem.createItem(Items.ARROW);
-		List<Holder.Reference<Potion>> potions = BuiltInRegistries.POTION.holders().toList();
+		List<Holder.Reference<Potion>> potions = BuiltInRegistries.POTION.listElements().toList();
 		for (Holder<Potion> potionType : potions) {
 			PotionContents potionContents = new PotionContents(potionType);
 			mapper.addConversion(8, createItem(TIPPED_ARROW, potionContents), EMCHelper.intMapOf(
@@ -47,7 +47,7 @@ public class TippedArrowMapper extends SpecialRecipeMapper<TippedArrowRecipe> {
 		return true;
 	}
 
-	private NSSItem createItem(ResourceLocation item, PotionContents contents) {
+	private NSSItem createItem(Identifier item, PotionContents contents) {
 		return NSSItem.createItem(item, DataComponentPatch.builder().set(DataComponents.POTION_CONTENTS, contents).build());
 	}
 
@@ -65,4 +65,11 @@ public class TippedArrowMapper extends SpecialRecipeMapper<TippedArrowRecipe> {
 	public String getDescription() {
 		return PEConfigTranslations.MAPPING_CRAFTING_MAPPER_TIPPED_ARROW.tooltip();
 	}
+
+    @Override
+    protected boolean matchesRecipe(net.minecraft.world.item.crafting.RecipeHolder<?> holder, RegistryAccess registries) {
+        if (!super.matchesRecipe(holder, registries)) return false;
+        var stack = moze_intel.projecte.utils.RecipeHelper.result(holder.value(), registries);
+        return stack.is(net.minecraft.world.item.Items.TIPPED_ARROW);
+    }
 }

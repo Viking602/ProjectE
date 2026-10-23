@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -19,17 +18,30 @@ import org.jetbrains.annotations.Nullable;
  * Helpers for Inventories, ItemStacks, Items, and the Ore Dictionary Notice: Please try to keep methods tidy and alphabetically ordered. Thanks!
  */
 public final class ItemHelper {
+    public static ItemStack craftingRemainder(ItemStack stack) {
+        var remainder = stack.getCraftingRemainder();
+        return remainder == null ? ItemStack.EMPTY : remainder.create();
+    }
+    public static ItemStack asStack(net.minecraft.world.item.ItemInstance instance) {
+        return switch (instance) {
+            case ItemStack stack -> stack;
+            case net.minecraft.world.item.ItemStackTemplate template -> template.create();
+            default -> new ItemStack(instance.typeHolder());
+        };
+    }
+    public static java.util.List<ItemStack> armor(net.minecraft.world.entity.LivingEntity entity) {
+        return java.util.List.of(entity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD),
+                entity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST),
+                entity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.LEGS),
+                entity.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.FEET));
+    }
+
 
 	/**
 	 * Gets an ActionResult based on a type
 	 */
-	public static InteractionResultHolder<ItemStack> actionResultFromType(InteractionResult type, ItemStack stack) {
-		return switch (type) {
-			case SUCCESS -> InteractionResultHolder.success(stack);
-			case CONSUME -> InteractionResultHolder.consume(stack);
-			case FAIL -> InteractionResultHolder.fail(stack);
-			default -> InteractionResultHolder.pass(stack);
-		};
+	public static InteractionResult actionResultFromType(InteractionResult type, ItemStack stack) {
+		return type;
 	}
 
 	/**
@@ -99,7 +111,7 @@ public final class ItemHelper {
 	}
 
 	public static boolean isRepairableDamagedItem(ItemStack stack) {
-		return stack.isDamageableItem() && stack.isRepairable() && stack.getDamageValue() > 0;
+		return stack.isDamageableItem() && stack.has(net.minecraft.core.component.DataComponents.REPAIRABLE) && stack.getDamageValue() > 0;
 	}
 
 	/**

@@ -69,7 +69,7 @@ public class CondenserBlockEntity extends EmcChestBlockEntity {
 	@Nullable
 	public final ItemInfo getLockInfo() {
 		if (requiredEmc == 0) {
-			if (level == null || !level.isClientSide) {
+			if (level == null || !level.isClientSide()) {
 				//If the lock doesn't have EMC don't tell the client it is there
 				return null;
 			}
@@ -195,7 +195,7 @@ public class CondenserBlockEntity extends EmcChestBlockEntity {
 	}
 
 	private boolean attemptCondenserSet(@NotNull Level level, @NotNull BlockPos pos, Player player) {
-		if (level.isClientSide) {
+		if (level.isClientSide()) {
 			return false;
 		}
 		if (getLockInfo() == null) {
@@ -224,26 +224,17 @@ public class CondenserBlockEntity extends EmcChestBlockEntity {
 	}
 
 	@Override
-	public void loadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		inputInventory.deserializeNBT(registries, tag.getCompound("input"));
-		if (tag.contains("lock")) {
-			lockInfo = ItemInfo.CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("lock")).result().orElse(null);
-		} else {
-			lockInfo = null;
-		}
+	public void loadAdditional(@NotNull net.minecraft.world.level.storage.ValueInput tag) {
+		super.loadAdditional(tag);
+		inputInventory.deserialize(tag.childOrEmpty("input"));
+		lockInfo = tag.read("lock", ItemInfo.CODEC).orElse(null);
 	}
 
 	@Override
-	protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.put("input", inputInventory.serializeNBT(registries));
-		if (lockInfo != null) {
-			DataResult<Tag> result = ItemInfo.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), lockInfo);
-			if (result.isSuccess()) {
-				tag.put("lock", result.getOrThrow());
-			}
-		}
+	protected void saveAdditional(@NotNull net.minecraft.world.level.storage.ValueOutput tag) {
+		super.saveAdditional(tag);
+		inputInventory.serialize(tag.child("input"));
+		if (lockInfo != null) tag.store("lock", ItemInfo.CODEC, lockInfo);
 	}
 
 	@Override

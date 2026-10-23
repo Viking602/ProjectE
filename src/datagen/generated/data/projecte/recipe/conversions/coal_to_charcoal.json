@@ -2,15 +2,29 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "projecte:philosophers_stone"
-    },
-    {
-      "item": "minecraft:coal"
-    }
+    "projecte:philosophers_stone",
+    "minecraft:coal"
   ],
   "result": {
     "count": 4,
     "id": "minecraft:charcoal"
-  }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:and",
+        "values": [
+          {
+            "type": "neoforge:mod_loaded",
+            "modid": "mekanism"
+          },
+          {
+            "type": "neoforge:mod_loaded",
+            "modid": "cakesticklib"
+          }
+        ]
+      }
+    }
+  ]
 }

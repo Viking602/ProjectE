@@ -49,12 +49,12 @@ public class MatterFurnaceOutputSlot extends InventoryContainerSlot {
 
 	@Override
 	protected void checkTakeAchievements(ItemStack stack) {
-		stack.onCraftedBy(player.level(), player, removeCount);
+		stack.onCraftedBy(player, removeCount);
 		if (player instanceof ServerPlayer serverPlayer) {
 			furnace.awardUsedRecipesAndPopExperience(serverPlayer);
 		}
 
 		removeCount = 0;
-		EventHooks.firePlayerSmeltedEvent(player, stack);
+		EventHooks.firePlayerSmeltedEvent(player, stack, removeCount);
 	}
 }

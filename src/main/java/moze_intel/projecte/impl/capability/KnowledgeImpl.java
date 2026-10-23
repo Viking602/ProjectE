@@ -68,7 +68,7 @@ public class KnowledgeImpl implements IKnowledgeProvider {
 	}
 
 	protected void fireChangedEvent() {
-		if (player != null && !player.level().isClientSide) {
+		if (player != null && !player.level().isClientSide()) {
 			NeoForge.EVENT_BUS.post(new PlayerKnowledgeChangeEvent(player));
 		}
 	}

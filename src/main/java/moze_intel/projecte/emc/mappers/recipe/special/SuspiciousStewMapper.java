@@ -19,28 +19,28 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.SuspiciousStewEffects;
-import net.minecraft.world.item.crafting.SuspiciousStewRecipe;
+import net.minecraft.world.item.crafting.TransmuteRecipe;
 import net.minecraft.world.level.block.SuspiciousEffectHolder;
 import org.jetbrains.annotations.Nullable;
 
 @RecipeTypeMapper
-public class SuspiciousStewMapper extends SpecialRecipeMapper<SuspiciousStewRecipe> {
+public class SuspiciousStewMapper extends SpecialRecipeMapper<TransmuteRecipe> {
 
-	private static final ResourceLocation SUSPICIOUS_STEW = BuiltInRegistries.ITEM.getKey(Items.SUSPICIOUS_STEW);
+	private static final Identifier SUSPICIOUS_STEW = BuiltInRegistries.ITEM.getKey(Items.SUSPICIOUS_STEW);
 
 	@Override
-	protected Class<SuspiciousStewRecipe> getRecipeClass() {
-		return SuspiciousStewRecipe.class;
+	protected Class<TransmuteRecipe> getRecipeClass() {
+		return TransmuteRecipe.class;
 	}
 
 	@Override
 	protected boolean handleRecipe(IMappingCollector<NormalizedSimpleStack, Long> mapper, RegistryAccess registryAccess, INSSFakeGroupManager fakeGroupManager) {
-		Optional<Named<Item>> tag = BuiltInRegistries.ITEM.getTag(ItemTags.SMALL_FLOWERS);
+		Optional<Named<Item>> tag = BuiltInRegistries.ITEM.get(ItemTags.SMALL_FLOWERS);
 		if (tag.isPresent()) {
 			Named<Item> flowersTag = tag.get();
 			NSSItem nssBowl = NSSItem.createItem(Items.BOWL);
@@ -100,4 +100,11 @@ public class SuspiciousStewMapper extends SpecialRecipeMapper<SuspiciousStewReci
 	public String getDescription() {
 		return PEConfigTranslations.MAPPING_CRAFTING_MAPPER_SUSPICIOUS_STEW.tooltip();
 	}
+
+    @Override
+    protected boolean matchesRecipe(net.minecraft.world.item.crafting.RecipeHolder<?> holder, RegistryAccess registries) {
+        if (!super.matchesRecipe(holder, registries)) return false;
+        var stack = moze_intel.projecte.utils.RecipeHelper.result(holder.value(), registries);
+        return stack.is(net.minecraft.world.item.Items.SUSPICIOUS_STEW);
+    }
 }

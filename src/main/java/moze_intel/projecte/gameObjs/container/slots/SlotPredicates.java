@@ -26,7 +26,7 @@ public final class SlotPredicates {
 	// slotrelayinput
 	public static final Predicate<ItemStack> RELAY_INV = input -> EMC_HOLDER.test(input) || HAS_EMC.test(input);
 
-	public static final Predicate<ItemStack> FURNACE_FUEL = input -> EMC_HOLDER.test(input) || input.getBurnTime(RecipeType.SMELTING) > 0;
+	public static final Predicate<ItemStack> FURNACE_FUEL = input -> EMC_HOLDER.test(input) || input.getBurnTime(RecipeType.SMELTING, moze_intel.projecte.utils.RecipeHelper.fuelValues()) > 0;
 
 	public static final Predicate<ItemStack> MERCURIAL_TARGET = input -> {
 		if (input.isEmpty()) {

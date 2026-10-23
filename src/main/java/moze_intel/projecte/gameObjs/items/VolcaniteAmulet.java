@@ -32,7 +32,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.ServerLevelData;
-import net.neoforged.neoforge.capabilities.Capabilities.FluidHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.FluidType;
@@ -45,15 +45,11 @@ public class VolcaniteAmulet extends ItemPE implements IProjectileShooter, IPede
 		super(props.component(PEDataComponentTypes.STORED_EMC, 0L));
 	}
 
-	@Override
-	public boolean hasCraftingRemainingItem(@NotNull ItemStack stack) {
-		return true;
-	}
 
 	@NotNull
 	@Override
-	public ItemStack getCraftingRemainingItem(ItemStack stack) {
-		return stack.copy();
+	public net.minecraft.world.item.ItemStackTemplate getCraftingRemainder(net.minecraft.world.item.ItemInstance stack) {
+		return net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(moze_intel.projecte.utils.ItemHelper.asStack(stack));
 	}
 
 	@NotNull
@@ -66,9 +62,9 @@ public class VolcaniteAmulet extends ItemPE implements IProjectileShooter, IPede
 		Level level = ctx.getLevel();
 		BlockPos pos = ctx.getClickedPos();
 		ItemStack stack = ctx.getItemInHand();
-		if (!level.isClientSide && PlayerHelper.hasEditPermission(player, level, pos) && consumeFuel(player, stack, 32, true)) {
+		if (!level.isClientSide() && PlayerHelper.hasEditPermission(player, level, pos) && consumeFuel(player, stack, 32, true)) {
 			Direction sideHit = ctx.getClickedFace();
-			IFluidHandler fluidHandler = WorldHelper.getCapability(level, FluidHandler.BLOCK, pos, sideHit);
+			IFluidHandler fluidHandler = moze_intel.projecte.utils.FluidTransferHelper.legacy(WorldHelper.getCapability(level, Capabilities.Fluid.BLOCK, pos, sideHit));
 			if (fluidHandler != null) {
 				fluidHandler.fill(new FluidStack(Fluids.LAVA, FluidType.BUCKET_VOLUME), IFluidHandler.FluidAction.EXECUTE);
 				return InteractionResult.CONSUME;
@@ -76,7 +72,7 @@ public class VolcaniteAmulet extends ItemPE implements IProjectileShooter, IPede
 			WorldHelper.placeFluid(player, level, pos, sideHit, Fluids.LAVA, false);
 			level.playSound(null, player.getX(), player.getY(), player.getZ(), PESoundEvents.TRANSMUTE.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 		}
-		return InteractionResult.sidedSuccess(level.isClientSide);
+		return InteractionResult.SUCCESS;
 	}
 
 	@Override
@@ -89,24 +85,24 @@ public class VolcaniteAmulet extends ItemPE implements IProjectileShooter, IPede
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, @NotNull List<Component> tooltip, @NotNull TooltipFlag flags) {
-		super.appendHoverText(stack, context, tooltip, flags);
-		tooltip.add(PELang.TOOLTIP_VOLCANITE_1.translate(ClientKeyHelper.getKeyName(PEKeybind.FIRE_PROJECTILE)));
-		tooltip.add(PELang.TOOLTIP_VOLCANITE_2.translate());
-		tooltip.add(PELang.TOOLTIP_VOLCANITE_3.translate());
-		tooltip.add(PELang.TOOLTIP_VOLCANITE_4.translate());
+	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, net.minecraft.world.item.component.TooltipDisplay display, java.util.function.Consumer<Component> tooltip, @NotNull TooltipFlag flags) {
+		super.appendHoverText(stack, context, display, tooltip, flags);
+		tooltip.accept(PELang.TOOLTIP_VOLCANITE_1.translate(ClientKeyHelper.getKeyName(PEKeybind.FIRE_PROJECTILE)));
+		tooltip.accept(PELang.TOOLTIP_VOLCANITE_2.translate());
+		tooltip.accept(PELang.TOOLTIP_VOLCANITE_3.translate());
+		tooltip.accept(PELang.TOOLTIP_VOLCANITE_4.translate());
 	}
 
 	@Override
 	public <PEDESTAL extends BlockEntity & IDMPedestal> boolean updateInPedestal(@NotNull ItemStack stack, @NotNull Level level, @NotNull BlockPos pos,
 			@NotNull PEDESTAL pedestal) {
-		if (!level.isClientSide && ProjectEConfig.server.cooldown.pedestal.volcanite.get() != -1) {
+		if (!level.isClientSide() && ProjectEConfig.server.cooldown.pedestal.volcanite.get() != -1) {
 			if (pedestal.getActivityCooldown() == 0) {
-				if (level.getLevelData() instanceof ServerLevelData worldInfo) {
-					worldInfo.setRainTime(0);
-					worldInfo.setThunderTime(0);
-					worldInfo.setRaining(false);
-					worldInfo.setThundering(false);
+				if (level instanceof net.minecraft.server.level.ServerLevel weatherLevel) {
+					weatherLevel.getWeatherData().setRainTime(0);
+					weatherLevel.getWeatherData().setThunderTime(0);
+					weatherLevel.getWeatherData().setRaining(false);
+					weatherLevel.getWeatherData().setThundering(false);
 				}
 				pedestal.setActivityCooldown(level, pos, ProjectEConfig.server.cooldown.pedestal.volcanite.get());
 			} else {

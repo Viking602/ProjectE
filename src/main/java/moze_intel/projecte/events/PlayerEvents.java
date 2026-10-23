@@ -26,7 +26,7 @@ import net.neoforged.fml.util.thread.EffectiveSide;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.common.damagesource.DamageContainer.Reduction;
 import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.neoforge.common.util.TriState;
+import net.minecraft.util.TriState;
 import net.neoforged.neoforge.event.entity.EntityEvent;
 import net.neoforged.neoforge.event.entity.EntityInvulnerabilityCheckEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
@@ -98,7 +98,7 @@ public class PlayerEvents {
 	@SubscribeEvent
 	public static void onHighAlchemistJoin(PlayerEvent.PlayerLoggedInEvent evt) {
 		if (PECore.uuids.contains(evt.getEntity().getUUID().toString())) {
-			MinecraftServer server = evt.getEntity().getServer();
+			MinecraftServer server = ((ServerPlayer) evt.getEntity()).level().getServer();
 			if (server != null) {
 				Component joinMessage = PELang.HIGH_ALCHEMIST.translateColored(ChatFormatting.BLUE, ChatFormatting.GOLD, evt.getEntity().getDisplayName());
 				server.getPlayerList().broadcastSystemMessage(joinMessage, false);
@@ -110,10 +110,10 @@ public class PlayerEvents {
 	public static void pickupItem(ItemEntityPickupEvent.Pre event) {
 		ItemEntity itemEntity = event.getItemEntity();
 		Player player = event.getPlayer();
-		if (itemEntity.level().isClientSide || itemEntity.hasPickUpDelay() || itemEntity.getTarget() != null && !player.getUUID().equals(itemEntity.getTarget())) {
+		if (itemEntity.level().isClientSide() || itemEntity.hasPickUpDelay() || itemEntity.getTarget() != null && !player.getUUID().equals(itemEntity.getTarget())) {
 			return;
 		}
-		ItemStack bag = AlchemicalBag.getFirstBagWithSuctionItem(player, player.getInventory().items);
+		ItemStack bag = AlchemicalBag.getFirstBagWithSuctionItem(player, player.getInventory().getNonEquipmentItems());
 		if (!bag.isEmpty()) {
 			IAlchBagProvider bagProvider = player.getCapability(PECapabilities.ALCH_BAG_CAPABILITY);
 			if (bagProvider != null) {
@@ -150,7 +150,7 @@ public class PlayerEvents {
 		DamageContainer damageContainer = event.getContainer();
 		if (damageContainer.getNewDamage() > 0) {
 			ReductionInfo reductionInfo = ReductionInfo.ZERO;
-			for (ItemStack armorStack : event.getEntity().getArmorSlots()) {
+			for (ItemStack armorStack : moze_intel.projecte.utils.ItemHelper.armor(event.getEntity())) {
 				if (armorStack.getItem() instanceof PEArmor armorItem) {
 					//We return the max of this piece's base reduction (in relation to the full set),
 					// and the max damage an item can absorb for a given source

@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "D": {
-      "item": "projecte:low_covalence_dust"
-    },
-    "S": {
-      "tag": "c:rods/wooden"
-    }
+    "D": "projecte:low_covalence_dust",
+    "S": "#c:rods/wooden"
   },
   "pattern": [
     "DDD",

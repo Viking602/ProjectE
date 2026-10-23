@@ -9,7 +9,7 @@ import moze_intel.projecte.gameObjs.registries.PEItems;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -32,16 +32,16 @@ public class AlchemicalBag extends ItemPE {
 
 	@NotNull
 	@Override
-	public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
-		if (!level.isClientSide) {
+	public InteractionResult use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+		if (!level.isClientSide()) {
 			player.openMenu(new ContainerProvider(player.getItemInHand(hand), hand), buf -> {
 				buf.writeEnum(hand);
-				buf.writeByte(player.getInventory().selected);
+				buf.writeByte(player.getInventory().getSelectedSlot());
 				buf.writeBoolean(false);
 			});
 		}
 
-		return InteractionResultHolder.success(player.getItemInHand(hand));
+		return InteractionResult.SUCCESS.heldItemTransformedTo(player.getItemInHand(hand));
 	}
 
 	public static ItemStack getFirstBagWithSuctionItem(Player player, NonNullList<ItemStack> inventory) {
@@ -83,7 +83,7 @@ public class AlchemicalBag extends ItemPE {
 		@Override
 		public AbstractContainerMenu createMenu(int windowId, @NotNull Inventory playerInventory, @NotNull Player player) {
 			IItemHandlerModifiable inv = (IItemHandlerModifiable) Objects.requireNonNull(player.getCapability(PECapabilities.ALCH_BAG_CAPABILITY)).getBag(color);
-			return new AlchBagContainer(windowId, playerInventory, hand, inv, playerInventory.selected, false);
+			return new AlchBagContainer(windowId, playerInventory, hand, inv, playerInventory.getSelectedSlot(), false);
 		}
 
 		@NotNull

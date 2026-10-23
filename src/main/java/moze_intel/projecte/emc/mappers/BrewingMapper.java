@@ -131,7 +131,7 @@ public class BrewingMapper implements IEMCMapper<NormalizedSimpleStack, Long> {
 	@Nullable
 	private static ItemStack[] getMatchingStacks(Ingredient ingredient) {
 		try {
-			return ingredient.getItems();
+			return moze_intel.projecte.utils.RecipeHelper.stacks(ingredient);
 		} catch (Exception e) {
 			return null;
 		}
@@ -146,7 +146,7 @@ public class BrewingMapper implements IEMCMapper<NormalizedSimpleStack, Long> {
 
 	private <T> void addReagents(Set<ItemInfo> allReagents, List<PotionBrewing.Mix<T>> conversions) {
 		for (PotionBrewing.Mix<T> conversion : conversions) {
-			for (ItemStack r : conversion.ingredient().getItems()) {
+			for (ItemStack r : moze_intel.projecte.utils.RecipeHelper.stacks(conversion.ingredient())) {
 				allReagents.add(ItemInfo.fromStack(r));
 			}
 		}
@@ -166,7 +166,7 @@ public class BrewingMapper implements IEMCMapper<NormalizedSimpleStack, Long> {
 				}
 			}
 		}
-		for (Holder<Potion> potion : BuiltInRegistries.POTION.holders().toList()) {
+		for (Holder<Potion> potion : BuiltInRegistries.POTION.listElements().toList()) {
 			PotionContents contents = new PotionContents(potion);
 			for (ItemInfo input : inputs) {
 				ItemStack stack = input.createStack();

@@ -49,7 +49,7 @@ public class BlockEntityTypeDeferredRegister extends PEDeferredRegister<BlockEnt
 			//Note: All entries should be of this type
 			if (entry instanceof BlockEntityTypeRegistryObject<?> beRO) {
 				beRO.registerCapabilityProviders(event);
-			} else if (!FMLEnvironment.production) {
+			} else if (!FMLEnvironment.isProduction()) {
 				throw new IllegalStateException("Expected entry to be a BlockEntityTypeRegistryObject");
 			}
 		}
@@ -132,7 +132,7 @@ public class BlockEntityTypeDeferredRegister extends PEDeferredRegister<BlockEnt
 		@SuppressWarnings("ConstantConditions")
 		public BlockEntityTypeRegistryObject<BE> build() {
 			//Note: There is no data fixer type as forge does not currently have a way exposing data fixers to mods yet
-			BlockEntityTypeRegistryObject<BE> holder = registerPE(block.getName(), () -> BlockEntityType.Builder.<BE>of(factory, block.getBlocks()).build(null));
+			BlockEntityTypeRegistryObject<BE> holder = registerPE(block.getName(), () -> new BlockEntityType<BE>(factory, block.getBlocks()));
 			holder.tickers(clientTicker, serverTicker);
 			holder.capabilities(capabilityProviders.isEmpty() ? null : capabilityProviders);
 			return holder;

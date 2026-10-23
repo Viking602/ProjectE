@@ -17,7 +17,7 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.capabilities.Capabilities.ItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.items.IItemHandler;
 
@@ -60,7 +60,7 @@ public class TickEvents {
 	}
 
 	public static boolean shouldPlayerResistFire(Player player) {
-		for (ItemStack stack : player.getArmorSlots()) {
+		for (ItemStack stack : moze_intel.projecte.utils.ItemHelper.armor(player)) {
 			if (!stack.isEmpty() && stack.getItem() instanceof IFireProtector protector && protector.canProtectAgainstFire(stack, player)) {
 				return true;
 			}
@@ -70,7 +70,7 @@ public class TickEvents {
 
 	private static Set<DyeColor> getBagColorsPresent(Player player) {
 		Set<DyeColor> bagsPresent = EnumSet.noneOf(DyeColor.class);
-		IItemHandler inv = player.getCapability(ItemHandler.ENTITY);
+		IItemHandler inv = moze_intel.projecte.utils.ItemTransferAdapter.legacy(player.getCapability(Capabilities.Item.ENTITY));
 		if (inv != null) {
 			for (int i = 0, slots = inv.getSlots(); i < slots; i++) {
 				ItemStack stack = inv.getStackInSlot(i);

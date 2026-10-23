@@ -162,8 +162,8 @@ public class BaseEmcBlockEntity extends BlockEntity implements IEmcStorage {
 	}
 
 	@Override
-	protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
+	protected void saveAdditional(@NotNull net.minecraft.world.level.storage.ValueOutput tag) {
+		super.saveAdditional(tag);
 		if (getStoredEmc() > getMaximumEmc()) {
 			currentEMC = getMaximumEmc();
 		}
@@ -171,8 +171,8 @@ public class BaseEmcBlockEntity extends BlockEntity implements IEmcStorage {
 	}
 
 	@Override
-	public void loadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		currentEMC = Math.min(tag.getLong("emc"), getMaximumEmc());
+	public void loadAdditional(@NotNull net.minecraft.world.level.storage.ValueInput tag) {
+		super.loadAdditional(tag);
+		currentEMC = Math.clamp(tag.getLongOr("emc", 0L), 0L, getMaximumEmc());
 	}
 }

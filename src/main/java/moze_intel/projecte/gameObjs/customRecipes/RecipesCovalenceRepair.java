@@ -19,8 +19,8 @@ import org.jetbrains.annotations.Nullable;
 
 public class RecipesCovalenceRepair extends CustomRecipe {
 
-	public RecipesCovalenceRepair(CraftingBookCategory category) {
-		super(category);
+	public RecipesCovalenceRepair() {
+		super();
 	}
 
 	@Nullable
@@ -53,7 +53,7 @@ public class RecipesCovalenceRepair extends CustomRecipe {
 
 	@NotNull
 	@Override
-	public ItemStack assemble(@NotNull CraftingInput inv, @NotNull HolderLookup.Provider registryAccess) {
+	public ItemStack assemble(@NotNull CraftingInput inv) {
 		RepairTargetInfo targetInfo = findIngredients(inv);
 		if (targetInfo == null) {
 			//If there isn't actually a match return no result
@@ -64,14 +64,13 @@ public class RecipesCovalenceRepair extends CustomRecipe {
 		return output;
 	}
 
-	@Override
 	public boolean canCraftInDimensions(int width, int height) {
 		return width > 1 || height > 1;
 	}
 
 	@NotNull
 	@Override
-	public RecipeSerializer<?> getSerializer() {
+	public RecipeSerializer<RecipesCovalenceRepair> getSerializer() {
 		return PERecipeSerializers.COVALENCE_REPAIR.get();
 	}
 

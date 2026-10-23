@@ -10,7 +10,7 @@ import moze_intel.projecte.gameObjs.registries.PEContainerTypes;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -61,7 +61,7 @@ public class CollectorMK1Container extends PEContainer {
 	}
 
 	@Override
-	public void clicked(int slotID, int button, @NotNull ClickType flag, @NotNull Player player) {
+	public void clicked(int slotID, int button, @NotNull ContainerInput flag, @NotNull Player player) {
 		Slot slot = tryGetSlot(slotID);
         if (!(slot instanceof ISlotGhost ghost) || !ghost.tryClear()) {
             super.clicked(slotID, button, flag, player);

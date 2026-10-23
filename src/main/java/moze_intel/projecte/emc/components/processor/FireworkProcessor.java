@@ -48,12 +48,13 @@ public class FireworkProcessor extends PersistentComponentProcessor<Fireworks> {
 	@Override
 	@Range(from = 0, to = Long.MAX_VALUE)
 	protected long recalculateEMC(@NotNull ItemInfo info, @Range(from = 1, to = Long.MAX_VALUE) long currentEMC, @NotNull Fireworks fireworks) throws ArithmeticException {
+		long extraEmc = 0;
 		int flightDuration = fireworks.flightDuration();
 		if (flightDuration > 1) {//Greater than default flight duration, factor in the extra pieces of gunpowder necessary
 			if (powderEmc == 0) {//No emc value for gunpowder
 				return 0;
 			}
-			currentEMC = Math.addExact(currentEMC, Math.multiplyExact(flightDuration - 1, powderEmc));
+			extraEmc = Math.multiplyExact(flightDuration - 1, powderEmc);
 		}
 
 		for (FireworkExplosion explosion : fireworks.explosions()) {
@@ -64,9 +65,10 @@ public class FireworkProcessor extends PersistentComponentProcessor<Fireworks> {
 				//No emc representation of this star, bail out
 				return 0;
 			}
-			currentEMC = Math.addExact(currentEMC, starEmc);
+			extraEmc = Math.addExact(extraEmc, starEmc);
 		}
-		return currentEMC;
+		// A crafting operation produces three rockets, sharing the fuel and all stars.
+		return Math.addExact(currentEMC, extraEmc / 3);
 	}
 
 	@Override
@@ -76,7 +78,14 @@ public class FireworkProcessor extends PersistentComponentProcessor<Fireworks> {
 			return;
 		}
 		//TODO: Do we even want to be supporting this, or just getting the value for gunpowder?
-		powderEmc = IComponentProcessorHelper.INSTANCE.getMinEmcFor(emcLookup, FireworkRocketRecipe.GUNPOWDER_INGREDIENT);
+		powderEmc = 0;
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server != null) for (var holder : server.getRecipeManager().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
+            if (holder.value() instanceof FireworkRocketRecipe recipe && recipe.result.is(Items.FIREWORK_ROCKET)) {
+                long value = IComponentProcessorHelper.INSTANCE.getMinEmcFor(emcLookup, recipe.fuel);
+                if (value > 0) powderEmc = powderEmc == 0 ? value : Math.min(powderEmc, value);
+            }
+        }
 	}
 
 	@Override

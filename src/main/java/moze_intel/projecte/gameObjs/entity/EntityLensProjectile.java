@@ -31,7 +31,7 @@ public class EntityLensProjectile extends NoGravityThrowableProjectile {
 
 	@Override
 	protected void onInsideBlock(@NotNull BlockState state) {
-		if (!level().isClientSide && state.getFluidState().is(FluidTags.WATER)) {
+		if (!level().isClientSide() && state.getFluidState().is(FluidTags.WATER)) {
 			playSound(SoundEvents.GENERIC_BURN, 0.7F, 1.6F + (random.nextFloat() - random.nextFloat()) * 0.4F);
 			((ServerLevel) level()).sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY(), getZ(), 2, 0, 0, 0, 0);
 			discard();
@@ -41,20 +41,20 @@ public class EntityLensProjectile extends NoGravityThrowableProjectile {
 	@Override
 	protected void onHit(@NotNull HitResult result) {
 		super.onHit(result);
-		if (!level().isClientSide) {
+		if (!level().isClientSide()) {
 			WorldHelper.createNovaExplosion(level(), getOwner(), getX(), getY(), getZ(), charge.radius());
 		}
 	}
 
 	@Override
-	public void addAdditionalSaveData(@NotNull CompoundTag nbt) {
+	public void addAdditionalSaveData(@NotNull net.minecraft.world.level.storage.ValueOutput nbt) {
 		super.addAdditionalSaveData(nbt);
 		nbt.putInt("charge", charge.ordinal());
 	}
 
 	@Override
-	public void readAdditionalSaveData(@NotNull CompoundTag nbt) {
+	public void readAdditionalSaveData(@NotNull net.minecraft.world.level.storage.ValueInput nbt) {
 		super.readAdditionalSaveData(nbt);
-		charge = ExplosiveLensCharge.BY_ID.apply(nbt.getInt("charge"));
+		charge = ExplosiveLensCharge.BY_ID.apply(nbt.getIntOr("charge", 0));
 	}
 }

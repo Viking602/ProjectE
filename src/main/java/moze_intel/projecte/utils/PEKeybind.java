@@ -5,7 +5,7 @@ import java.util.Locale;
 import java.util.function.IntFunction;
 import moze_intel.projecte.PECore;
 import moze_intel.projecte.utils.text.IHasTranslationKey.IHasEnumNameTranslationKey;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.ByIdMap;

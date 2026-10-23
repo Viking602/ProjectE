@@ -29,7 +29,7 @@ import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.data.recipes.SpecialRecipeBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -67,7 +67,7 @@ public class PERecipeProvider extends RecipeProvider {
 			}
 
 			@Override
-			public void accept(@NotNull ResourceLocation recipeId, @NotNull Recipe<?> recipe, @Nullable AdvancementHolder advancementHolder, ICondition @NotNull ... conditions) {
+			public void accept(@NotNull Identifier recipeId, @NotNull Recipe<?> recipe, @Nullable AdvancementHolder advancementHolder, ICondition @NotNull ... conditions) {
 				recipeOutput.accept(recipeId, recipe, advancementHolder, conditions);
 				existingFileHelper.trackGenerated(recipeId, PackType.SERVER_DATA, ".json", "recipes");
 			}
@@ -130,7 +130,7 @@ public class PERecipeProvider extends RecipeProvider {
 	}
 
 	private static void tomeRecipe(RecipeOutput recipeOutput, boolean alternate) {
-		ResourceLocation name = PECore.rl(alternate ? "tome_alt" : "tome");
+		Identifier name = PECore.rl(alternate ? "tome_alt" : "tome");
 		//Tome is enabled and should use full stars
 		baseTomeRecipe(alternate)
 				.define('K', getFullKleinStarIngredient(KleinTier.OMEGA))

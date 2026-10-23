@@ -72,11 +72,6 @@ public enum EnumMatterType implements StringRepresentable, IMatterType {
 		return 0;
 	}
 
-	@NotNull
-	@Override
-	public Ingredient getRepairIngredient() {
-		return Ingredient.EMPTY;
-	}
 
 	public MapColor getMapColor() {
 		return mapColor;

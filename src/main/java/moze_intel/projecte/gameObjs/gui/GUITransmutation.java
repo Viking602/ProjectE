@@ -8,11 +8,11 @@ import moze_intel.projecte.utils.EMCHelper;
 import moze_intel.projecte.utils.TransmutationEMCFormatter;
 import moze_intel.projecte.utils.text.PELang;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
@@ -20,17 +20,15 @@ import org.lwjgl.glfw.GLFW;
 public class GUITransmutation extends PEContainerScreen<TransmutationContainer> {
 
 	private static final BigInteger MAX_EXACT_TRANSMUTATION_DISPLAY = BigInteger.valueOf(1_000_000_000_000L);
-	private static final ResourceLocation texture = PECore.rl("textures/gui/transmute.png");
+	private static final Identifier texture = PECore.rl("textures/gui/transmute.png");
 
 	private final TransmutationInventory inv;
 	private EditBox textBoxFilter;
 	private Button previous, next;
 
 	public GUITransmutation(TransmutationContainer container, Inventory invPlayer, Component title) {
-		super(container, invPlayer, title);
+		super(container, invPlayer, title, 228, 196);
 		this.inv = container.transmutationInventory;
-		this.imageWidth = 228;
-		this.imageHeight = 196;
 		this.titleLabelX = 6;
 		this.titleLabelY = 8;
 	}
@@ -55,9 +53,9 @@ public class GUITransmutation extends PEContainerScreen<TransmutationContainer> 
 	}
 
 	@Override
-	public void resize(@NotNull Minecraft minecraft, int width, int height) {
+	public void resize(int width, int height) {
 		String filter = this.textBoxFilter.getValue();
-		init(minecraft, width, height);
+		super.resize(width, height);
 		this.textBoxFilter.setValue(filter);
 	}
 
@@ -77,49 +75,50 @@ public class GUITransmutation extends PEContainerScreen<TransmutationContainer> 
 	}
 
 	@Override
-	protected void renderBg(@NotNull GuiGraphics graphics, float partialTicks, int mouseX, int mouseY) {
-		graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
-		this.textBoxFilter.render(graphics, mouseX, mouseY, partialTicks);
+	protected void renderBg(@NotNull GuiGraphicsExtractor graphics, float partialTicks, int mouseX, int mouseY) {
+		graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, texture, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 256);
+		this.textBoxFilter.extractRenderState(graphics, mouseX, mouseY, partialTicks);
 	}
 
 	@Override
-	protected void renderLabels(@NotNull GuiGraphics graphics, int x, int y) {
-		graphics.drawString(font, title, titleLabelX, titleLabelY, 0x404040, false);
+	protected void extractLabels(@NotNull GuiGraphicsExtractor graphics, int x, int y) {
+		graphics.text(font, title, titleLabelX, titleLabelY, 0xFF404040, false);
 		//Don't render inventory as we don't have space
-		graphics.drawString(font, PELang.EMC_TOOLTIP.translate(""), 6, this.imageHeight - 104, 0x404040, false);
+		graphics.text(font, PELang.EMC_TOOLTIP.translate(""), 6, this.imageHeight - 104, 0xFF404040, false);
 		Component emc = TransmutationEMCFormatter.formatEMC(inv.getAvailableEmc());
-		graphics.drawString(font, emc, 6, this.imageHeight - 94, 0x404040, false);
+		graphics.text(font, emc, 6, this.imageHeight - 94, 0xFF404040, false);
 
 		if (inv.learnFlag > 0) {
-			graphics.drawString(font, PELang.TRANSMUTATION_LEARNED_1.translate(), 98, 30, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_LEARNED_2.translate(), 99, 38, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_LEARNED_3.translate(), 100, 46, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_LEARNED_4.translate(), 101, 54, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_LEARNED_5.translate(), 102, 62, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_LEARNED_6.translate(), 103, 70, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_LEARNED_7.translate(), 104, 78, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_LEARNED_8.translate(), 107, 86, 0x404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_LEARNED_1.translate(), 98, 30, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_LEARNED_2.translate(), 99, 38, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_LEARNED_3.translate(), 100, 46, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_LEARNED_4.translate(), 101, 54, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_LEARNED_5.translate(), 102, 62, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_LEARNED_6.translate(), 103, 70, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_LEARNED_7.translate(), 104, 78, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_LEARNED_8.translate(), 107, 86, 0xFF404040, false);
 
 			inv.learnFlag--;
 		}
 
 		if (inv.unlearnFlag > 0) {
-			graphics.drawString(font, PELang.TRANSMUTATION_UNLEARNED_1.translate(), 97, 22, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_UNLEARNED_2.translate(), 98, 30, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_UNLEARNED_3.translate(), 99, 38, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_UNLEARNED_4.translate(), 100, 46, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_UNLEARNED_5.translate(), 101, 54, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_UNLEARNED_6.translate(), 102, 62, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_UNLEARNED_7.translate(), 103, 70, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_UNLEARNED_8.translate(), 104, 78, 0x404040, false);
-			graphics.drawString(font, PELang.TRANSMUTATION_UNLEARNED_9.translate(), 107, 86, 0x404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_UNLEARNED_1.translate(), 97, 22, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_UNLEARNED_2.translate(), 98, 30, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_UNLEARNED_3.translate(), 99, 38, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_UNLEARNED_4.translate(), 100, 46, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_UNLEARNED_5.translate(), 101, 54, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_UNLEARNED_6.translate(), 102, 62, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_UNLEARNED_7.translate(), 103, 70, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_UNLEARNED_8.translate(), 104, 78, 0xFF404040, false);
+			graphics.text(font, PELang.TRANSMUTATION_UNLEARNED_9.translate(), 107, 86, 0xFF404040, false);
 
 			inv.unlearnFlag--;
 		}
 	}
 
 	@Override
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+	public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+		int keyCode = event.key();
 		if (textBoxFilter.isFocused()) {
 			//Manually make it so that hitting escape when the filter is focused will exit the focus
 			if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
@@ -128,13 +127,15 @@ public class GUITransmutation extends PEContainerScreen<TransmutationContainer> 
 			}
 			//Otherwise have it handle the key press
 			//This is where key combos and deletion is handled, and where we bypass the inventory key closing the screen
-			return textBoxFilter.keyPressed(keyCode, scanCode, modifiers);
+			return textBoxFilter.keyPressed(event);
 		}
-		return super.keyPressed(keyCode, scanCode, modifiers);
+		return super.keyPressed(event);
 	}
 
 	@Override
-	public boolean mouseClicked(double x, double y, int mouseButton) {
+	public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+		double x = event.x(), y = event.y();
+		int mouseButton = event.button();
 		if (textBoxFilter.isMouseOver(x, y)) {
 			if (mouseButton == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
 				//Note: Clearing filter will be handled by the text box's responder
@@ -145,7 +146,7 @@ public class GUITransmutation extends PEContainerScreen<TransmutationContainer> 
 				textBoxFilter.setFocused(false);
 			}
 		}
-		return super.mouseClicked(x, y, mouseButton);
+		return super.mouseClicked(event, doubleClick);
 	}
 
 	@Override
@@ -156,11 +157,11 @@ public class GUITransmutation extends PEContainerScreen<TransmutationContainer> 
 	}
 
 	@Override
-	protected void renderTooltip(@NotNull GuiGraphics graphics, int mouseX, int mouseY) {
+	protected void extractTooltip(@NotNull GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 		BigInteger emcAmount = inv.getAvailableEmc();
 
 		if (emcAmount.compareTo(MAX_EXACT_TRANSMUTATION_DISPLAY) < 0) {
-			super.renderTooltip(graphics, mouseX, mouseY);
+			super.extractTooltip(graphics, mouseX, mouseY);
 			return;
 		}
 
@@ -170,9 +171,9 @@ public class GUITransmutation extends PEContainerScreen<TransmutationContainer> 
 		int emcBottom = emcTop + 15;
 
 		if (mouseX > emcLeft && mouseX < emcRight && mouseY > emcTop && mouseY < emcBottom) {
-			setTooltipForNextRenderPass(PELang.EMC_TOOLTIP.translate(EMCHelper.formatEmc(emcAmount)));
+			graphics.setTooltipForNextFrame(PELang.EMC_TOOLTIP.translate(EMCHelper.formatEmc(emcAmount)), mouseX, mouseY);
 		} else {
-			super.renderTooltip(graphics, mouseX, mouseY);
+			super.extractTooltip(graphics, mouseX, mouseY);
 		}
 	}
 }

@@ -91,11 +91,11 @@ public class ItemDeferredRegister extends PEDeferredRegister<Item> {
 	}
 
 	public <ITEM extends Item> ItemRegistryObject<ITEM> registerTool(String name, Function<Item.Properties, ITEM> sup) {
-		return register(name, () -> sup.apply(new NoDurabilityItemProperties().stacksTo(1).fireResistant()));
+		return register(name, () -> sup.apply(new NoDurabilityItemProperties().setId(net.minecraft.resources.ResourceKey.create(Registries.ITEM, moze_intel.projecte.PECore.rl(name))).stacksTo(1).fireResistant()));
 	}
 
 	public <ITEM extends Item> ItemRegistryObject<ITEM> register(String name, Function<Item.Properties, ITEM> sup, UnaryOperator<Item.Properties> propertyModifier) {
-		return register(name, () -> sup.apply(propertyModifier.apply(new Item.Properties())));
+		return register(name, () -> sup.apply(propertyModifier.apply(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(Registries.ITEM, moze_intel.projecte.PECore.rl(name))))));
 	}
 
 	@NotNull
@@ -106,6 +106,9 @@ public class ItemDeferredRegister extends PEDeferredRegister<Item> {
 	}
 
 	private static class NoDurabilityItemProperties extends Item.Properties {
+        @Override
+        public Item.Properties enchantable(int value) { return this; }
+
 
 		@NotNull
 		@Override

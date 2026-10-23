@@ -12,9 +12,9 @@ import moze_intel.projecte.integration.jade.PEJadeConstants;
 import moze_intel.projecte.integration.recipe_viewer.alias.ProjectEAliases;
 import moze_intel.projecte.utils.PEKeybind;
 import moze_intel.projecte.utils.text.PELang;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.data.PackOutput;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class PELangProvider extends BaseLanguageProvider {
 
@@ -103,7 +103,7 @@ public class PELangProvider extends BaseLanguageProvider {
 		addJadeConfigTooltip(PEJadeConstants.EMC_PROVIDER, "EMC Provider");
 	}
 
-	private void addJadeConfigTooltip(ResourceLocation location, String value) {
+	private void addJadeConfigTooltip(Identifier location, String value) {
 		add("config.jade.plugin_" + location.getNamespace() + "." + location.getPath(), value);
 	}
 

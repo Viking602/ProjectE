@@ -9,16 +9,19 @@ import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 
-public abstract class SpecialRecipeMapper<RECIPE extends CustomRecipe> implements IRecipeTypeMapper {
+public abstract class SpecialRecipeMapper<RECIPE extends net.minecraft.world.item.crafting.CraftingRecipe> implements IRecipeTypeMapper {
 
 	protected abstract Class<RECIPE> getRecipeClass();
+    protected boolean matchesRecipe(RecipeHolder<?> holder, RegistryAccess registries) {
+        return getRecipeClass().isInstance(holder.value());
+    }
 
 	protected abstract boolean handleRecipe(IMappingCollector<NormalizedSimpleStack, Long> mapper, RegistryAccess registryAccess, INSSFakeGroupManager fakeGroupManager);
 
 	@Override
 	public final boolean handleRecipe(IMappingCollector<NormalizedSimpleStack, Long> mapper, RecipeHolder<?> recipeHolder, RegistryAccess registryAccess,
 			INSSFakeGroupManager fakeGroupManager) {
-		if (getRecipeClass().isInstance(recipeHolder.value())) {
+		if (matchesRecipe(recipeHolder, registryAccess)) {
 			return handleRecipe(mapper, registryAccess, fakeGroupManager);
 		}
 		return false;

@@ -57,7 +57,7 @@ import net.minecraft.core.dispenser.DispenseItemBehavior;
 import net.minecraft.core.dispenser.OptionalDispenseItemBehavior;
 import net.minecraft.core.dispenser.ShearsDispenseItemBehavior;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -82,11 +82,11 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.capabilities.Capabilities.FluidHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -116,15 +116,15 @@ public class PECore {
 	public static ModContainer MOD_CONTAINER;
 
 	public static void debugLog(String msg, Object... args) {
-		if (!FMLEnvironment.production || ProjectEConfig.common.debugLogging.get()) {
+		if (!FMLEnvironment.isProduction() || ProjectEConfig.common.debugLogging.get()) {
 			LOGGER.info(msg, args);
 		} else {
 			LOGGER.debug(msg, args);
 		}
 	}
 
-	public static ResourceLocation rl(String path) {
-		return ResourceLocation.fromNamespaceAndPath(MODID, path);
+	public static Identifier rl(String path) {
+		return Identifier.fromNamespaceAndPath(MODID, path);
 	}
 
 	private static PECore instance;
@@ -143,7 +143,6 @@ public class PECore {
 		modEventBus.addListener(this::registerRegistries);
 		modEventBus.addListener(this::modifyRegistries);
 		PEAttachmentTypes.ATTACHMENT_TYPES.register(modEventBus);
-		PEArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
 		PEBlockEntityTypes.BLOCK_ENTITY_TYPES.register(modEventBus);
 		PEBlocks.BLOCKS.register(modEventBus);
 		PEBlockTypes.BLOCK_TYPES.register(modEventBus);
@@ -185,7 +184,7 @@ public class PECore {
 	}
 
 	private void commonSetup(FMLCommonSetupEvent event) {
-		new ThreadCheckUpdate().start();
+		// This local port has no update feed; upstream updates target a different game version.
 		EMCMappingHandler.loadMappers();
 
 		event.enqueueWork(() -> {
@@ -240,7 +239,7 @@ public class PECore {
 					Level level = source.level();
 					Direction direction = source.state().getValue(DispenserBlock.FACING);
 					BlockPos pos = source.pos().relative(direction);
-					IFluidHandler fluidHandler = WorldHelper.getCapability(level, FluidHandler.BLOCK, pos, direction.getOpposite());
+					IFluidHandler fluidHandler = moze_intel.projecte.utils.FluidTransferHelper.legacy(WorldHelper.getCapability(level, Capabilities.Fluid.BLOCK, pos, direction.getOpposite()));
 					if (fluidHandler != null) {
 						fluidHandler.fill(new FluidStack(Fluids.WATER, FluidType.BUCKET_VOLUME), IFluidHandler.FluidAction.EXECUTE);
 						return stack;
@@ -259,7 +258,7 @@ public class PECore {
 		}
 	}
 
-	private void dataPackSync(OnDatapackSyncEvent event) {
+	private void updateEmcValues() {
 		if (emcUpdateResourceManager != null) {
 			long start = System.currentTimeMillis();
 			//Clear the cached created tags
@@ -273,6 +272,10 @@ public class PECore {
 			}
 			emcUpdateResourceManager = null;
 		}
+	}
+
+	private void dataPackSync(OnDatapackSyncEvent event) {
+		updateEmcValues();
 		if (event.getPlayer() == null) {
 			List<ServerPlayer> players = event.getPlayerList().getPlayers();
 			if (players.isEmpty()) {
@@ -296,9 +299,9 @@ public class PECore {
 		}
 	}
 
-	private void addReloadListeners(AddReloadListenerEvent event) {
-		event.addListener((ResourceManagerReloadListener) manager -> emcUpdateResourceManager = new EmcUpdateData(event.getServerResources(), event.getRegistryAccess(), manager));
-		event.addListener(WorldTransmutationManager.INSTANCE);
+	private void addReloadListeners(AddServerReloadListenersEvent event) {
+		event.addListener(rl("emc_reload_context"), (ResourceManagerReloadListener) manager -> emcUpdateResourceManager = new EmcUpdateData(event.getServerResources(), event.getRegistryAccess(), manager));
+		event.addListener(rl("world_transmutations"), WorldTransmutationManager.INSTANCE);
 	}
 
 	private void registerCommands(RegisterCommandsEvent event) {
@@ -315,6 +318,7 @@ public class PECore {
 	}
 
 	private void serverStarting(ServerStartingEvent event) {
+		updateEmcValues();
 		if (!ThreadCheckUUID.hasRunServer()) {
 			new ThreadCheckUUID(true).start();
 		}

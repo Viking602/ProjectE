@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shaped",
   "category": "building",
   "key": {
-    "M": {
-      "item": "projecte:dark_matter"
-    }
+    "M": "projecte:dark_matter"
   },
   "pattern": [
     "MM",

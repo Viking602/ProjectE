@@ -18,18 +18,18 @@ import org.jetbrains.annotations.NotNull;
 public class PEHammer extends PETool implements IHasConditionalAttributes {
 
 	public PEHammer(IMatterType matterType, int numCharges, Properties props) {
-		super(matterType, PETags.Blocks.MINEABLE_WITH_PE_HAMMER, numCharges, props.attributes(createAttributes(matterType, 10, -3)));
+		super(matterType, PETags.Blocks.MINEABLE_WITH_PE_HAMMER, numCharges, props.attributes(moze_intel.projecte.utils.MatterToolProperties.attributes(matterType, 10, -3)));
 	}
 
 	@Override
-	public boolean hurtEnemy(@NotNull ItemStack stack, @NotNull LivingEntity damaged, @NotNull LivingEntity damager) {
+	public void hurtEnemy(@NotNull ItemStack stack, @NotNull LivingEntity damaged, @NotNull LivingEntity damager) {
 		ToolHelper.attackWithCharge(stack, damaged, damager, 1.0F);
-		return true;
 	}
 
 	@Override
-	public boolean canPerformAction(@NotNull ItemStack stack, @NotNull ItemAbility toolAction) {
-		return ItemAbilities.DEFAULT_PICKAXE_ACTIONS.contains(toolAction) || ToolHelper.DEFAULT_PE_HAMMER_ACTIONS.contains(toolAction);
+	public boolean canPerformAction(@NotNull net.minecraft.world.item.ItemInstance instance, @NotNull ItemAbility toolAction) {
+		ItemStack stack = moze_intel.projecte.utils.ItemHelper.asStack(instance);
+		return ToolHelper.DEFAULT_PE_HAMMER_ACTIONS.contains(toolAction);
 	}
 
 	@Override

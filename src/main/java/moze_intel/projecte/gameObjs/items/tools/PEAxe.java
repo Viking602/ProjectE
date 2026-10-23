@@ -26,7 +26,7 @@ public class PEAxe extends AxeItem implements IItemCharge, IBarHelper {
 	private final int numCharges;
 
 	public PEAxe(IMatterType matterType, int numCharges, Properties props) {
-		super(matterType, props.attributes(createAttributes(matterType, 5, -3))
+		super(matterType.toolMaterial(), 5, -3, props
 				.component(PEDataComponentTypes.CHARGE, 0)
 				.component(PEDataComponentTypes.STORED_EMC, 0L)
 		);
@@ -34,12 +34,10 @@ public class PEAxe extends AxeItem implements IItemCharge, IBarHelper {
 		this.numCharges = numCharges;
 	}
 
-	@Override
 	public boolean isEnchantable(@NotNull ItemStack stack) {
 		return false;
 	}
 
-	@Override
 	public boolean isBookEnchantable(@NotNull ItemStack stack, @NotNull ItemStack book) {
 		return false;
 	}

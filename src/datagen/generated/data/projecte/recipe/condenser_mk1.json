@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "C": {
-      "item": "projecte:alchemical_chest"
-    },
-    "D": {
-      "tag": "c:gems/diamond"
-    },
-    "O": {
-      "tag": "c:obsidians/normal"
-    }
+    "C": "projecte:alchemical_chest",
+    "D": "#c:gems/diamond",
+    "O": "#c:obsidians/normal"
   },
   "pattern": [
     "ODO",

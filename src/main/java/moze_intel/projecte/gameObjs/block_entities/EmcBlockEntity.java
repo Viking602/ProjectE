@@ -25,7 +25,17 @@ import org.jetbrains.annotations.Range;
 
 public abstract class EmcBlockEntity extends BaseEmcBlockEntity {
 
-	private boolean updateComparators;
+	@Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level != null) {
+            var handler = moze_intel.projecte.utils.ItemTransferAdapter.legacy(
+                    level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, pos, state, this, null));
+            WorldHelper.dropInventory(handler, level, pos);
+        }
+    }
+
+    private boolean updateComparators;
 	private long lastSave;
 
 	public EmcBlockEntity(BlockEntityTypeRegistryObject<? extends EmcBlockEntity> type, BlockPos pos, BlockState state) {
@@ -77,11 +87,11 @@ public abstract class EmcBlockEntity extends BaseEmcBlockEntity {
 			//Only mark the chunk as dirty at most once per tick
 			ChunkAccess chunk = level.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), ChunkStatus.FULL, false);
 			if (chunk != null) {
-				chunk.setUnsaved(true);
+				chunk.markUnsaved();
 			}
 			lastSave = time;
 		}
-		if (recheckComparators && !level.isClientSide) {
+		if (recheckComparators && !level.isClientSide()) {
 			updateComparators = true;
 		}
 	}
@@ -171,7 +181,7 @@ public abstract class EmcBlockEntity extends BaseEmcBlockEntity {
 
 		public void compact() {
 			if (needsCompacting) {
-				if (level != null && !level.isClientSide) {
+				if (level != null && !level.isClientSide()) {
 					empty = ItemHelper.compactInventory(this);
 				}
 				needsCompacting = false;

@@ -34,7 +34,7 @@ import moze_intel.projecte.api.ProjectERegistries;
 import moze_intel.projecte.api.codec.IPECodecHelper;
 import moze_intel.projecte.api.codec.MapProcessor;
 import moze_intel.projecte.api.nss.NormalizedSimpleStack;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.util.ExtraCodecs;

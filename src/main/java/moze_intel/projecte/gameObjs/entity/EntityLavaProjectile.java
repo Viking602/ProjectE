@@ -33,7 +33,7 @@ public class EntityLavaProjectile extends NoGravityThrowableProjectile {
 
 	@Override
 	protected void onInsideBlock(@NotNull BlockState state) {
-		if (!level().isClientSide && state.getFluidState().is(FluidTags.LAVA)) {
+		if (!level().isClientSide() && state.getFluidState().is(FluidTags.LAVA)) {
 			discard();
 		}
 	}
@@ -42,7 +42,7 @@ public class EntityLavaProjectile extends NoGravityThrowableProjectile {
 	public void tick() {
 		super.tick();
 		Level level = level();
-		if (!level.isClientSide && isAlive()) {
+		if (!level.isClientSide() && isAlive()) {
 			if (getOwner() instanceof Player player) {
 				for (BlockPos pos : WorldHelper.positionsAround(blockPosition(), 3)) {
 					if (level.isLoaded(pos)) {
@@ -52,15 +52,15 @@ public class EntityLavaProjectile extends NoGravityThrowableProjectile {
 							if (PlayerHelper.hasEditPermission(player, level, pos)) {
 								WorldHelper.drainFluid(player, level, pos, state);
 								level.playSound(null, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.5F,
-										2.6F + (level.random.nextFloat() - level.random.nextFloat()) * 0.8F);
+										2.6F + (level.getRandom().nextFloat() - level.getRandom().nextFloat()) * 0.8F);
 							}
 						}
 					}
 				}
 			}
-			if (getY() > level.getMaxBuildHeight()) {
+			if (getY() > level.getMaxY() + 1) {
 				LevelData worldInfo = level.getLevelData();
-				worldInfo.setRaining(false);
+				((net.minecraft.server.level.ServerLevel) level).getWeatherData().setRaining(false);
 				discard();
 			}
 		}
@@ -69,7 +69,7 @@ public class EntityLavaProjectile extends NoGravityThrowableProjectile {
 	@Override
 	protected void onHitBlock(@NotNull BlockHitResult result) {
 		super.onHitBlock(result);
-		if (!level().isClientSide && getOwner() instanceof Player player) {
+		if (!level().isClientSide() && getOwner() instanceof Player player) {
 			ItemStack found = PlayerHelper.findFirstItem(player, PEItems.VOLCANITE_AMULET);
 			if (!found.isEmpty() && ItemPE.consumeFuel(player, found, 32, true)) {
 				WorldHelper.placeFluid(player, level(), result.getBlockPos(), result.getDirection(), Fluids.LAVA, false);
@@ -80,11 +80,11 @@ public class EntityLavaProjectile extends NoGravityThrowableProjectile {
 	@Override
 	protected void onHitEntity(@NotNull EntityHitResult result) {
 		super.onHitEntity(result);
-		if (!level().isClientSide && getOwner() instanceof Player player) {
+		if (!level().isClientSide() && getOwner() instanceof Player player) {
 			ItemStack found = PlayerHelper.findFirstItem(player, PEItems.VOLCANITE_AMULET);
 			if (!found.isEmpty() && ItemPE.consumeFuel(player, found, 32, true)) {
 				Entity ent = result.getEntity();
-				if (ent.hurt(level().damageSources().inFire(), 5)) {
+				if (ent.hurtServer((net.minecraft.server.level.ServerLevel) level(), level().damageSources().inFire(), 5)) {
 					ent.igniteForSeconds(5);
 				}
 			}

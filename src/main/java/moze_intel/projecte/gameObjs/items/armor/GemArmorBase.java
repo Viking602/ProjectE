@@ -6,11 +6,11 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.equipment.ArmorType;
 
 public abstract class GemArmorBase extends PEArmor {
 
-	public GemArmorBase(ArmorItem.Type armorType, Properties props) {
+	public GemArmorBase(ArmorType armorType, Properties props) {
 		super(PEArmorMaterials.GEM_ARMOR, armorType, props);
 	}
 
@@ -20,20 +20,20 @@ public abstract class GemArmorBase extends PEArmor {
 	}
 
 	@Override
-	public float getMaxDamageAbsorb(ArmorItem.Type type, DamageSource source) {
+	public float getMaxDamageAbsorb(ArmorType type, DamageSource source) {
 		if (source.is(DamageTypeTags.IS_EXPLOSION)) {
 			return 750;
 		}
-		if (type == ArmorItem.Type.BOOTS && source.is(DamageTypeTags.IS_FALL)) {
+		if (type == ArmorType.BOOTS && source.is(DamageTypeTags.IS_FALL)) {
 			return 15 / getPieceEffectiveness(type);
-		} else if (type == ArmorItem.Type.HELMET && source.is(DamageTypeTags.IS_DROWNING)) {
+		} else if (type == ArmorType.HELMET && source.is(DamageTypeTags.IS_DROWNING)) {
 			return 15 / getPieceEffectiveness(type);
 		}
 		if (source.is(DamageTypeTags.BYPASSES_ARMOR)) {
 			return 0;
 		}
 		//If the source is not unblockable, allow our piece to block a certain amount of damage
-		if (type == ArmorItem.Type.HELMET || type == ArmorItem.Type.BOOTS) {
+		if (type == ArmorType.HELMET || type == ArmorType.BOOTS) {
 			return 400;
 		}
 		return 500;

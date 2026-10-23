@@ -31,5 +31,23 @@
     "recipes": [
       "projecte:conversions/charcoal_to_coal"
     ]
-  }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:and",
+        "values": [
+          {
+            "type": "neoforge:mod_loaded",
+            "modid": "mekanism"
+          },
+          {
+            "type": "neoforge:mod_loaded",
+            "modid": "cakesticklib"
+          }
+        ]
+      }
+    }
+  ]
 }

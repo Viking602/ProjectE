@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "D": {
-      "tag": "c:storage_blocks/diamond"
-    },
-    "O": {
-      "tag": "c:obsidians/normal"
-    },
-    "S": {
-      "item": "minecraft:glass"
-    }
+    "D": "#c:storage_blocks/diamond",
+    "O": "#c:obsidians/normal",
+    "S": "minecraft:glass"
   },
   "pattern": [
     "OSO",

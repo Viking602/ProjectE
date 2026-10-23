@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "minecraft:range_dispatch",
+    "property": "projecte:active",
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "projecte:item/mind_stone"
+    },
+    "entries": [
+      {
+        "threshold": 1.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "projecte:item/mind_stone_on"
+        }
+      }
+    ]
+  }
+}

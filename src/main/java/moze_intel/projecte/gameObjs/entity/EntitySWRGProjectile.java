@@ -38,9 +38,9 @@ public class EntitySWRGProjectile extends NoGravityThrowableProjectile {
 			// Undo the 0.99 (0.8 in water) drag applied in superclass
 			double inverse = 1D / (isInWater() ? 0.8D : 0.99D);
 			this.setDeltaMovement(this.getDeltaMovement().scale(inverse));
-			if (!level().isClientSide && isAlive() && getY() > level().getMaxBuildHeight() && level().isRaining()) {
-				if (level().getLevelData() instanceof ServerLevelData levelData) {
-					levelData.setThundering(true);
+			if (!level().isClientSide() && isAlive() && getY() > level().getMaxY() + 1 && level().isRaining()) {
+				if (level() instanceof net.minecraft.server.level.ServerLevel weatherLevel) {
+					weatherLevel.getWeatherData().setThundering(true);
 				}
 				discard();
 			}
@@ -50,22 +50,22 @@ public class EntitySWRGProjectile extends NoGravityThrowableProjectile {
 	@Override
 	protected void onHitBlock(@NotNull BlockHitResult result) {
 		super.onHitBlock(result);
-		if (!level().isClientSide && getOwner() instanceof ServerPlayer player) {
+		if (!level().isClientSide() && getOwner() instanceof ServerPlayer player) {
 			ItemStack found = PlayerHelper.findFirstItem(player, fromArcana ? PEItems.ARCANA_RING : PEItems.SWIFTWOLF_RENDING_GALE);
 			if (!found.isEmpty() && ItemPE.consumeFuel(player, found, 768, true)) {
 				BlockPos pos = result.getBlockPos();
-				LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level());
+				LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level(), net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
 				if (lightning != null) {
-					lightning.moveTo(pos.getCenter());
+					lightning.setPos(pos.getCenter());
 					lightning.setCause(player);
 					level().addFreshEntity(lightning);
 				}
 				if (level().isThundering()) {
 					for (int i = 0; i < 3; i++) {
-						LightningBolt bonus = EntityType.LIGHTNING_BOLT.create(level());
+						LightningBolt bonus = EntityType.LIGHTNING_BOLT.create(level(), net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
 						if (bonus != null) {
-							bonus.moveTo(pos.getX() + 0.5 + level().random.nextGaussian(), pos.getY() + 0.5 + level().random.nextGaussian(),
-									pos.getZ() + 0.5 + level().random.nextGaussian());
+							bonus.setPos(pos.getX() + 0.5 + level().getRandom().nextGaussian(), pos.getY() + 0.5 + level().getRandom().nextGaussian(),
+									pos.getZ() + 0.5 + level().getRandom().nextGaussian());
 							bonus.setCause(player);
 							level().addFreshEntity(bonus);
 						}
@@ -78,7 +78,7 @@ public class EntitySWRGProjectile extends NoGravityThrowableProjectile {
 	@Override
 	protected void onHitEntity(@NotNull EntityHitResult result) {
 		super.onHitEntity(result);
-		if (!level().isClientSide && result.getEntity() instanceof LivingEntity e && getOwner() instanceof Player player) {
+		if (!level().isClientSide() && result.getEntity() instanceof LivingEntity e && getOwner() instanceof Player player) {
 			ItemStack found = PlayerHelper.findFirstItem(player, fromArcana ? PEItems.ARCANA_RING : PEItems.SWIFTWOLF_RENDING_GALE);
 			if (!found.isEmpty() && ItemPE.consumeFuel(player, found, 64, true)) {
 				// Minor damage, so we count as the attacker for launching the mob
@@ -95,13 +95,13 @@ public class EntitySWRGProjectile extends NoGravityThrowableProjectile {
 	}
 
 	@Override
-	public void readAdditionalSaveData(@NotNull CompoundTag compound) {
+	public void readAdditionalSaveData(@NotNull net.minecraft.world.level.storage.ValueInput compound) {
 		super.readAdditionalSaveData(compound);
-		fromArcana = compound.getBoolean("fromArcana");
+		fromArcana = compound.getBooleanOr("fromArcana", false);
 	}
 
 	@Override
-	public void addAdditionalSaveData(@NotNull CompoundTag compound) {
+	public void addAdditionalSaveData(@NotNull net.minecraft.world.level.storage.ValueOutput compound) {
 		super.addAdditionalSaveData(compound);
 		compound.putBoolean("fromArcana", fromArcana);
 	}

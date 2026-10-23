@@ -29,14 +29,13 @@ import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -51,21 +50,22 @@ import org.jetbrains.annotations.NotNull;
 public class PEKatar extends PETool implements IItemMode<KatarMode>, IExtraFunction, IHasConditionalAttributes {
 
 	public PEKatar(IMatterType matterType, int numCharges, Properties props) {
-		super(matterType, PETags.Blocks.MINEABLE_WITH_PE_KATAR, numCharges, props.attributes(createAttributes(matterType, 19, -2.4F))
+		super(matterType, PETags.Blocks.MINEABLE_WITH_PE_KATAR, numCharges, props.attributes(moze_intel.projecte.utils.MatterToolProperties.attributes(matterType, 19, -2.4F))
 				.component(PEDataComponentTypes.KATAR_MODE, KatarMode.SLAY_HOSTILE)
 		);
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, @NotNull List<Component> tooltip, @NotNull TooltipFlag flags) {
-		super.appendHoverText(stack, context, tooltip, flags);
-		tooltip.add(getToolTip(stack));
+	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, net.minecraft.world.item.component.TooltipDisplay display, java.util.function.Consumer<Component> tooltip, @NotNull TooltipFlag flags) {
+		super.appendHoverText(stack, context, display, tooltip, flags);
+		tooltip.accept(getToolTip(stack));
 	}
 
 	@Override
-	public boolean canPerformAction(@NotNull ItemStack stack, @NotNull ItemAbility toolAction) {
+	public boolean canPerformAction(@NotNull net.minecraft.world.item.ItemInstance instance, @NotNull ItemAbility toolAction) {
+		ItemStack stack = moze_intel.projecte.utils.ItemHelper.asStack(instance);
 		return ItemAbilities.DEFAULT_AXE_ACTIONS.contains(toolAction) || ItemAbilities.DEFAULT_SHEARS_ACTIONS.contains(toolAction) ||
-			   ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(toolAction) || ItemAbilities.DEFAULT_HOE_ACTIONS.contains(toolAction) ||
+			   toolAction == ItemAbilities.SWORD_SWEEP || ItemAbilities.DEFAULT_HOE_ACTIONS.contains(toolAction) ||
 			   ToolHelper.DEFAULT_PE_KATAR_ACTIONS.contains(toolAction);
 	}
 
@@ -122,14 +122,13 @@ public class PEKatar extends PETool implements IItemMode<KatarMode>, IExtraFunct
 	}
 
 	@Override
-	public boolean hurtEnemy(@NotNull ItemStack stack, @NotNull LivingEntity damaged, @NotNull LivingEntity damager) {
+	public void hurtEnemy(@NotNull ItemStack stack, @NotNull LivingEntity damaged, @NotNull LivingEntity damager) {
 		ToolHelper.attackWithCharge(stack, damaged, damager, 1.0F);
-		return true;
 	}
 
 	@NotNull
 	@Override
-	public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+	public InteractionResult use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
 		//Shear entities
 		return ItemHelper.actionResultFromType(ToolHelper.shearEntityAOE(player, hand, 0), player.getItemInHand(hand));
 	}
@@ -146,8 +145,8 @@ public class PEKatar extends PETool implements IItemMode<KatarMode>, IExtraFunct
 
 	@NotNull
 	@Override
-	public UseAnim getUseAnimation(@NotNull ItemStack stack) {
-		return UseAnim.BLOCK;
+	public ItemUseAnimation getUseAnimation(@NotNull ItemStack stack) {
+		return ItemUseAnimation.BLOCK;
 	}
 
 	@Override
@@ -170,13 +169,13 @@ public class PEKatar extends PETool implements IItemMode<KatarMode>, IExtraFunct
 			BlockPos pos = entity.blockPosition();
 			Level level = entity.level();
 			if (target.isShearable(player, stack, level, pos)) {
-				if (!level.isClientSide) {
+				if (!level.isClientSide()) {
 					for (ItemStack drop : target.onSheared(player, stack, level, pos)) {
-						target.spawnShearedDrop(level, pos, drop);
+						target.spawnShearedDrop((net.minecraft.server.level.ServerLevel) level, pos, drop);
 					}
 					entity.gameEvent(GameEvent.SHEAR, player);
 				}
-				return InteractionResult.sidedSuccess(level.isClientSide);
+				return InteractionResult.SUCCESS;
 			}
 		}
 		return InteractionResult.PASS;

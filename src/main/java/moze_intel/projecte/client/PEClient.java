@@ -36,13 +36,11 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.TippableArrowRenderer;
 import net.minecraft.client.renderer.entity.TntRenderer;
-import net.minecraft.client.renderer.entity.player.PlayerRenderer;
-import net.minecraft.client.renderer.item.ItemProperties;
-import net.minecraft.client.renderer.item.ItemPropertyFunction;
-import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.client.renderer.entity.player.AvatarRenderer;
+import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.Commands;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.ItemLike;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
@@ -61,8 +59,8 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 @Mod(value = PECore.MODID, dist = Dist.CLIENT)
 public class PEClient {
 
-	public static final ResourceLocation ACTIVE_OVERRIDE = PECore.rl("active");
-	public static final ResourceLocation MODE_OVERRIDE = PECore.rl("mode");
+	public static final Identifier ACTIVE_OVERRIDE = PECore.rl("active");
+	public static final Identifier MODE_OVERRIDE = PECore.rl("mode");
 
 	public PEClient(ModContainer container, IEventBus modEventBus) {
 		container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
@@ -72,10 +70,25 @@ public class PEClient {
 		modEventBus.addListener(this::registerOverlays);
 		modEventBus.addListener(this::registerRenderers);
 		modEventBus.addListener(this::addLayers);
+		modEventBus.addListener(this::registerProperties);
+		modEventBus.addListener(LayerYue::registerState);
 
 		NeoForge.EVENT_BUS.addListener(this::onEntityJoinWorld);
+		NeoForge.EVENT_BUS.addListener(this::tickClientArmor);
 		NeoForge.EVENT_BUS.addListener(this::registerClientCommands);
 	}
+
+    private void tickClientArmor(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
+        var mc = Minecraft.getInstance();
+        var player = mc.player;
+        if (player == null || mc.isPaused()) return;
+        var feet = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.FEET);
+        if (feet.getItem() instanceof moze_intel.projecte.gameObjs.items.armor.GemFeet boots)
+            boots.tickArmor(feet, player.level(), player, net.minecraft.world.entity.EquipmentSlot.FEET);
+        var legs = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.LEGS);
+        if (legs.getItem() instanceof moze_intel.projecte.gameObjs.items.armor.GemLegs leggings)
+            leggings.tickArmor(legs, player.level(), player, net.minecraft.world.entity.EquipmentSlot.LEGS);
+    }
 
 	private void onEntityJoinWorld(EntityJoinLevelEvent event) {
 		Minecraft mc = Minecraft.getInstance();
@@ -126,17 +139,6 @@ public class PEClient {
 			});
 		}
 
-		evt.enqueueWork(() -> {
-			//Property Overrides
-			addPropertyOverrides(ACTIVE_OVERRIDE, (stack, level, entity, seed) -> stack.getOrDefault(PEDataComponentTypes.ACTIVE, false) ? 1F : 0F,
-					PEItems.GEM_OF_ETERNAL_DENSITY, PEItems.VOID_RING, PEItems.ARCANA_RING, PEItems.ARCHANGEL_SMITE, PEItems.BLACK_HOLE_BAND, PEItems.BODY_STONE,
-					PEItems.HARVEST_GODDESS_BAND, PEItems.IGNITION_RING, PEItems.LIFE_STONE, PEItems.MIND_STONE, PEItems.SOUL_STONE, PEItems.WATCH_OF_FLOWING_TIME,
-					PEItems.ZERO_RING);
-			addPropertyOverrides(MODE_OVERRIDE, (stack, level, entity, seed) ->
-					stack.getOrDefault(PEDataComponentTypes.ARCANA_MODE, PEItems.ARCANA_RING.asItem().getDefaultMode()).ordinal(), PEItems.ARCANA_RING);
-			addPropertyOverrides(MODE_OVERRIDE, (stack, level, entity, seed) ->
-					stack.getOrDefault(PEDataComponentTypes.SWRG_MODE, PEItems.ARCANA_RING.asItem().getDefaultMode()).ordinal(), PEItems.SWIFTWOLF_RENDING_GALE);
-		});
 	}
 
 	private void registerKeybindings(RegisterKeyMappingsEvent event) {
@@ -166,18 +168,15 @@ public class PEClient {
 		event.registerEntityRenderer(PEEntityTypes.HOMING_ARROW.get(), TippableArrowRenderer::new);
 	}
 
-	private void addLayers(EntityRenderersEvent.AddLayers event) {
-		for (PlayerSkin.Model model : event.getSkins()) {
-			if (event.getSkin(model) instanceof PlayerRenderer skin) {
-				skin.addLayer(new LayerYue(skin));
-			}
-		}
-	}
+    private void addLayers(EntityRenderersEvent.AddLayers event) {
+        for (var model : event.getSkins()) {
+            var skin = event.getPlayerRenderer(model);
+            skin.addLayer(new LayerYue(skin));
+        }
+    }
 
-	@SuppressWarnings("deprecation")
-	private static void addPropertyOverrides(ResourceLocation override, ItemPropertyFunction propertyGetter, ItemLike... itemProviders) {
-		for (ItemLike itemProvider : itemProviders) {
-			ItemProperties.register(itemProvider.asItem(), override, propertyGetter);
-		}
-	}
+    private void registerProperties(RegisterRangeSelectItemModelPropertyEvent event) {
+        event.register(ACTIVE_OVERRIDE, PEItemProperty.ACTIVE.type());
+        event.register(MODE_OVERRIDE, PEItemProperty.MODE.type());
+    }
 }

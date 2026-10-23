@@ -28,7 +28,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
@@ -57,7 +57,7 @@ public class SWRG extends ItemPE implements IPedestalItem, IProjectileShooter, I
 			// Repel on both sides - smooth animation
 			WorldHelper.repelEntitiesSWRG(player.level(), player.getBoundingBox().inflate(5), player);
 		}
-		if (player.level().isClientSide) {
+		if (player.level().isClientSide()) {
 			return;
 		}
 		if (!hasEmc(player, stack, 64, true)) {
@@ -83,9 +83,10 @@ public class SWRG extends ItemPE implements IPedestalItem, IProjectileShooter, I
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slot, boolean isHeld) {
-		super.inventoryTick(stack, level, entity, slot, isHeld);
-		if (hotBarOrOffHand(slot) && entity instanceof Player player) {
+	public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.server.level.ServerLevel level, @NotNull Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+		super.inventoryTick(stack, level, entity, slot);
+		boolean isHeld = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+		if (hotBarOrOffHand(slot, entity, stack) && entity instanceof Player player) {
 			tick(stack, player);
 		}
 	}
@@ -96,13 +97,13 @@ public class SWRG extends ItemPE implements IPedestalItem, IProjectileShooter, I
 
 	@NotNull
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, @NotNull InteractionHand hand) {
+	public InteractionResult use(Level level, Player player, @NotNull InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
 			SWRGMode oldMode = getMode(stack);
 			changeMode(player, stack, oldMode, oldMode.next());
 		}
-		return InteractionResultHolder.success(stack);
+		return InteractionResult.SUCCESS.heldItemTransformedTo(stack);
 	}
 
 	private SWRGMode changeMode(Player player, ItemStack stack, SWRGMode oldMode, SWRGMode mode) {
@@ -133,13 +134,13 @@ public class SWRG extends ItemPE implements IPedestalItem, IProjectileShooter, I
 	@Override
 	public <PEDESTAL extends BlockEntity & IDMPedestal> boolean updateInPedestal(@NotNull ItemStack stack, @NotNull Level level, @NotNull BlockPos pos,
 			@NotNull PEDESTAL pedestal) {
-		if (!level.isClientSide && ProjectEConfig.server.cooldown.pedestal.swrg.get() != -1) {
+		if (!level.isClientSide() && ProjectEConfig.server.cooldown.pedestal.swrg.get() != -1) {
 			if (pedestal.getActivityCooldown() <= 0) {
 				for (Mob living : level.getEntitiesOfClass(Mob.class, pedestal.getEffectBounds(),
 						ent -> !ent.isSpectator() && (!(ent instanceof TamableAnimal tamableAnimal) || !tamableAnimal.isTame()))) {
-					LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
+					LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
 					if (lightning != null) {
-						lightning.moveTo(living.position());
+						lightning.setPos(living.position());
 						level.addFreshEntity(lightning);
 					}
 				}

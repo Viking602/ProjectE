@@ -33,9 +33,10 @@ public class BodyStone extends PEToggleItem implements IPedestalItem, ICapabilit
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slot, boolean isHeld) {
-		super.inventoryTick(stack, level, entity, slot, isHeld);
-		if (level.isClientSide || !hotBarOrOffHand(slot) || !(entity instanceof Player player)) {
+	public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.server.level.ServerLevel level, @NotNull Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+		super.inventoryTick(stack, level, entity, slot);
+		boolean isHeld = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+		if (level.isClientSide() || !hotBarOrOffHand(slot, entity, stack) || !(entity instanceof Player player)) {
 			return;
 		}
 		if (stack.getOrDefault(PEDataComponentTypes.ACTIVE, false)) {
@@ -55,7 +56,7 @@ public class BodyStone extends PEToggleItem implements IPedestalItem, ICapabilit
 	@Override
 	public <PEDESTAL extends BlockEntity & IDMPedestal> boolean updateInPedestal(@NotNull ItemStack stack, @NotNull Level level, @NotNull BlockPos pos,
 			@NotNull PEDESTAL pedestal) {
-		if (!level.isClientSide && ProjectEConfig.server.cooldown.pedestal.body.get() != -1) {
+		if (!level.isClientSide() && ProjectEConfig.server.cooldown.pedestal.body.get() != -1) {
 			if (pedestal.getActivityCooldown() == 0) {
 				for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class, pedestal.getEffectBounds())) {
 					if (player.getFoodData().needsFood()) {

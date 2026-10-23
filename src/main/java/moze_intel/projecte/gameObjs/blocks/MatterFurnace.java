@@ -12,7 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.capabilities.Capabilities.ItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +41,7 @@ public class MatterFurnace extends AbstractFurnaceBlock implements IMatterBlock,
 
 	@Override
 	protected void openContainer(Level level, @NotNull BlockPos pos, @NotNull Player player) {
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
 			DMFurnaceBlockEntity furnace = WorldHelper.getBlockEntity(DMFurnaceBlockEntity.class, level, pos, true);
 			if (furnace != null) {
 				player.openMenu(furnace, pos);
@@ -49,20 +49,11 @@ public class MatterFurnace extends AbstractFurnaceBlock implements IMatterBlock,
 		}
 	}
 
-	@Override
-	@Deprecated
-	public void onRemove(BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
-		if (state.getBlock() != newState.getBlock()) {
-			IItemHandler handler = WorldHelper.getCapability(level, ItemHandler.BLOCK, pos, state, null, null);
-			WorldHelper.dropInventory(handler, level, pos);
-			super.onRemove(state, level, pos, newState, isMoving);
-		}
-	}
 
 	@Override
 	@Deprecated
-	public int getAnalogOutputSignal(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos) {
-		return ItemHandlerHelper.calcRedstoneFromInventory(WorldHelper.getCapability(level, ItemHandler.BLOCK, pos, state, null, null));
+	public int getAnalogOutputSignal(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, net.minecraft.core.Direction direction) {
+		return ItemHandlerHelper.calcRedstoneFromInventory(moze_intel.projecte.utils.ItemTransferAdapter.legacy(WorldHelper.getCapability(level, Capabilities.Item.BLOCK, pos, state, null, null)));
 	}
 
 	@Override

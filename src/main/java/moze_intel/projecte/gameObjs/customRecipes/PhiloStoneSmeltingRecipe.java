@@ -25,8 +25,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class PhiloStoneSmeltingRecipe extends CustomRecipe {
 
-	public PhiloStoneSmeltingRecipe(CraftingBookCategory category) {
-		super(category);
+	public PhiloStoneSmeltingRecipe() {
+		super();
 	}
 
 	@Override
@@ -37,18 +37,26 @@ public class PhiloStoneSmeltingRecipe extends CustomRecipe {
 
 	@NotNull
 	@Override
-	public ItemStack assemble(@NotNull CraftingInput inv, @NotNull HolderLookup.Provider registryAccess) {
-		Set<RecipeHolder<SmeltingRecipe>> matchingRecipes = getMatchingRecipes(inv, ServerLifecycleHooks.getCurrentServer().overworld());
+	public ItemStack assemble(@NotNull CraftingInput inv) {
+		var server = ServerLifecycleHooks.getCurrentServer();
+		if (server == null) {
+			return ItemStack.EMPTY;
+		}
+		Set<RecipeHolder<SmeltingRecipe>> matchingRecipes = getMatchingRecipes(inv, server.overworld());
 		if (matchingRecipes.isEmpty()) {
 			return ItemStack.EMPTY;
 		}
 		//If we have at least one matching recipe, return the output
 		//Note: It is multiplied by seven as we have seven inputs
-		ItemStack output = matchingRecipes.stream().findFirst().get().value().getResultItem(registryAccess);
+		ItemStack output = matchingRecipes.iterator().next().value().assemble(new SingleRecipeInput(ItemStack.EMPTY));
 		return output.copyWithCount(output.getCount() * 7);
 	}
 
 	private Set<RecipeHolder<SmeltingRecipe>> getMatchingRecipes(CraftingInput inv, @NotNull Level level) {
+		// Full recipes now live on the server; crafting results are synchronized by the menu.
+		if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) {
+			return Collections.emptySet();
+		}
 		List<ItemStack> philoStones = new ArrayList<>();
 		List<ItemStack> coals = new ArrayList<>();
 		List<ItemStack> allItems = new ArrayList<>();
@@ -83,7 +91,7 @@ public class PhiloStoneSmeltingRecipe extends CustomRecipe {
 								if (matchingRecipes.isEmpty()) {
 									//If there are no matching recipes yet see if there are any recipes that match the current stack and add them if they are,
 									// if we didn't end up adding any elements that means there are no matching recipes so fail
-									if (!matchingRecipes.addAll(level.getRecipeManager().getRecipesFor(RecipeType.SMELTING, furnaceInput, level))) {
+									if (!matchingRecipes.addAll(serverLevel.getServer().getRecipeManager().recipeMap().getRecipesFor(RecipeType.SMELTING, furnaceInput, level).toList())) {
 										return Collections.emptySet();
 									}
 								} else {
@@ -113,14 +121,13 @@ public class PhiloStoneSmeltingRecipe extends CustomRecipe {
 		return Collections.emptySet();
 	}
 
-	@Override
 	public boolean canCraftInDimensions(int width, int height) {
 		return width * height >= 9;
 	}
 
 	@NotNull
 	@Override
-	public RecipeSerializer<?> getSerializer() {
+	public RecipeSerializer<PhiloStoneSmeltingRecipe> getSerializer() {
 		return PERecipeSerializers.PHILO_STONE_SMELTING.get();
 	}
 }

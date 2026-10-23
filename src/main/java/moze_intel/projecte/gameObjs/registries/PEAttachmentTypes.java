@@ -22,7 +22,7 @@ public class PEAttachmentTypes {
 
 	public static final PEDeferredHolder<AttachmentType<?>, AttachmentType<AlchemicalBagAttachment>> ALCHEMICAL_BAGS = ATTACHMENT_TYPES.register("alchemical_bags",
 			() -> AttachmentType.builder(AlchemicalBagAttachment::new)
-					.serialize(AlchemicalBagAttachment.CODEC)
+					.serialize(com.mojang.serialization.MapCodec.assumeMapUnsafe(AlchemicalBagAttachment.CODEC))
 					.copyHandler(AlchemicalBagAttachment::copy)
 					.copyOnDeath()
 					.build()
@@ -30,7 +30,7 @@ public class PEAttachmentTypes {
 
 	public static final PEDeferredHolder<AttachmentType<?>, AttachmentType<KnowledgeAttachment>> KNOWLEDGE = ATTACHMENT_TYPES.register("knowledge",
 			() -> AttachmentType.builder(KnowledgeAttachment::new)
-					.serialize(KnowledgeAttachment.CODEC)
+					.serialize(com.mojang.serialization.MapCodec.assumeMapUnsafe(KnowledgeAttachment.CODEC))
 					.copyHandler(KnowledgeAttachment::copy)
 					.copyOnDeath()
 					.build()
@@ -38,7 +38,7 @@ public class PEAttachmentTypes {
 
 	public static final PEDeferredHolder<AttachmentType<?>, AttachmentType<Boolean>> GEM_ARMOR_STATE = ATTACHMENT_TYPES.register("gem_armor_state",
 			() -> AttachmentType.builder(holder -> false)
-					.serialize(Codec.BOOL, val -> val)
+					.serialize(Codec.BOOL.fieldOf("active"), val -> val)
 					.copyHandler((attachment, holder, provider) -> attachment ? true : null)
 					.copyOnDeath()
 					.build()

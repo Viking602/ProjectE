@@ -584,7 +584,8 @@
           "output": {
             "type": "projecte:item",
             "id": "minecraft:firework_rocket"
-          }
+          },
+          "count": 3
         },
         {
           "ingredients": [
@@ -1876,17 +1877,7 @@
       {
         "type": "projecte:item",
         "emc_value": 192,
-        "id": "minecraft:saddle"
-      },
-      {
-        "type": "projecte:item",
-        "emc_value": 192,
         "id": "minecraft:echo_shard"
-      },
-      {
-        "type": "projecte:item",
-        "emc_value": 192,
-        "id": "minecraft:name_tag"
       },
       {
         "type": "projecte:item",

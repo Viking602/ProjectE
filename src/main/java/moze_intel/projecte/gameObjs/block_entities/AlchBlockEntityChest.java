@@ -31,7 +31,7 @@ public class AlchBlockEntityChest extends EmcChestBlockEntity {
 		@Override
 		public void onContentsChanged(int slot) {
 			super.onContentsChanged(slot);
-			if (level != null && !level.isClientSide) {
+			if (level != null && !level.isClientSide()) {
 				inventoryChanged = true;
 			}
 		}
@@ -43,15 +43,15 @@ public class AlchBlockEntityChest extends EmcChestBlockEntity {
 	}
 
 	@Override
-	public void loadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		inventory.deserializeNBT(registries, tag);
+	public void loadAdditional(@NotNull net.minecraft.world.level.storage.ValueInput tag) {
+		super.loadAdditional(tag);
+		inventory.deserialize(tag);
 	}
 
 	@Override
-	protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.merge(inventory.serializeNBT(registries));
+	protected void saveAdditional(@NotNull net.minecraft.world.level.storage.ValueOutput tag) {
+		super.saveAdditional(tag);
+		inventory.serialize(tag);
 	}
 
 	public static void tickClient(Level level, BlockPos pos, BlockState state, AlchBlockEntityChest alchChest) {

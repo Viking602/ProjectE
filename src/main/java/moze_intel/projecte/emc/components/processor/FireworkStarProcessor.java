@@ -14,7 +14,7 @@ import moze_intel.projecte.api.components.DataComponentProcessor;
 import moze_intel.projecte.api.components.IComponentProcessorHelper;
 import moze_intel.projecte.config.PEConfigTranslations;
 import moze_intel.projecte.utils.Constants;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -132,17 +132,22 @@ public class FireworkStarProcessor extends PersistentComponentProcessor<Firework
 		}
 		//Note: We subtract one from the length, as SMALL_BALL does not require any, and won't be processed or stored
 		shapeEmcLookup = new Reference2LongOpenHashMap<>(FireworkExplosion.Shape.values().length - 1);
-		for (Map.Entry<Item, FireworkExplosion.Shape> entry : FireworkStarRecipe.SHAPE_BY_ITEM.entrySet()) {
-			FireworkExplosion.Shape shape = entry.getValue();
-			if (shape != FireworkExplosion.Shape.SMALL_BALL) {
-				long emc = emcLookup.applyAsLong(ItemInfo.fromItem(entry.getKey()));
-				if (emc > 0) {
-					shapeEmcLookup.mergeLong(shape, emc, Math::min);
-				}
-			}
-		}
-		trailEmc = IComponentProcessorHelper.INSTANCE.getMinEmcFor(emcLookup, FireworkStarRecipe.TRAIL_INGREDIENT);
-		twinkleEmc = IComponentProcessorHelper.INSTANCE.getMinEmcFor(emcLookup, FireworkStarRecipe.TWINKLE_INGREDIENT);
+        trailEmc = twinkleEmc = 0;
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server != null) for (var holder : server.getRecipeManager().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
+            if (holder.value() instanceof FireworkStarRecipe recipe && recipe.result.is(net.minecraft.world.item.Items.FIREWORK_STAR)) {
+                recipe.shapes.forEach((shape, ingredient) -> {
+                    if (shape != FireworkExplosion.Shape.SMALL_BALL) {
+                        long emc = IComponentProcessorHelper.INSTANCE.getMinEmcFor(emcLookup, ingredient);
+                        if (emc > 0) shapeEmcLookup.mergeLong(shape, emc, Math::min);
+                    }
+                });
+                long trail = IComponentProcessorHelper.INSTANCE.getMinEmcFor(emcLookup, recipe.trail);
+                long twinkle = IComponentProcessorHelper.INSTANCE.getMinEmcFor(emcLookup, recipe.twinkle);
+                if (trail > 0) trailEmc = trailEmc == 0 ? trail : Math.min(trailEmc, trail);
+                if (twinkle > 0) twinkleEmc = twinkleEmc == 0 ? twinkle : Math.min(twinkleEmc, twinkle);
+            }
+        }
 	}
 
 	@Override

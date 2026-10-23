@@ -23,7 +23,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -37,7 +36,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult.Type;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.capabilities.Capabilities.ItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
@@ -64,7 +63,7 @@ public class BlackHoleBand extends PEToggleItem implements IAlchBagItem, IAlchCh
 				if (sound.isPresent()) {
 					player.level().playSound(null, player.getX(), player.getY(), player.getZ(), sound.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
 				}
-				return InteractionResult.sidedSuccess(level.isClientSide);
+				return InteractionResult.SUCCESS;
 			}
 		}
 		return InteractionResult.PASS;
@@ -72,21 +71,22 @@ public class BlackHoleBand extends PEToggleItem implements IAlchBagItem, IAlchCh
 
 	@NotNull
 	@Override
-	public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+	public InteractionResult use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
 		InteractionResult result = tryPickupFluid(level, player, stack);
 		if (!result.consumesAction() && changeMode(player, stack, hand)) {
-			result = InteractionResult.sidedSuccess(level.isClientSide);
+			result = InteractionResult.SUCCESS;
 		}
 		return ItemHelper.actionResultFromType(result, stack);
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slot, boolean isHeld) {
-		super.inventoryTick(stack, level, entity, slot, isHeld);
+	public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.server.level.ServerLevel level, @NotNull Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+		super.inventoryTick(stack, level, entity, slot);
+		boolean isHeld = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
 		if (entity instanceof Player player && stack.getOrDefault(PEDataComponentTypes.ACTIVE, false)) {
 			for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, player.getBoundingBox().inflate(7))) {
-				if (ItemHelper.simulateFit(player.getInventory().items, item.getItem()) < item.getItem().getCount()) {
+				if (ItemHelper.simulateFit(player.getInventory().getNonEquipmentItems(), item.getItem()) < item.getItem().getCount()) {
 					WorldHelper.gravitateEntityTowards(item, player.position());
 				}
 			}
@@ -100,12 +100,12 @@ public class BlackHoleBand extends PEToggleItem implements IAlchBagItem, IAlchCh
 		Map<Direction, IItemHandler> nearbyHandlers = new EnumMap<>(Direction.class);
 		for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, pedestal.getEffectBounds(), ent -> !ent.isSpectator() && ent.isAlive())) {
 			WorldHelper.gravitateEntityTowards(item, target);
-			if (!level.isClientSide && item.distanceToSqr(target) < 1.21) {
+			if (!level.isClientSide() && item.distanceToSqr(target) < 1.21) {
 				for (Direction dir : Constants.DIRECTIONS) {
 					//Cache the item handlers in various spots so that we only query each neighboring position once
 					IItemHandler inv = nearbyHandlers.get(dir);
 					if (inv == null) {
-						inv = WorldHelper.getCapability(level, ItemHandler.BLOCK, pos.relative(dir), dir);
+						inv = moze_intel.projecte.utils.ItemTransferAdapter.legacy(WorldHelper.getCapability(level, Capabilities.Item.BLOCK, pos.relative(dir), dir));
 						nearbyHandlers.put(dir, inv);
 					}
 					ItemStack result = ItemHandlerHelper.insertItemStacked(inv, item.getItem(), false);
@@ -132,13 +132,13 @@ public class BlackHoleBand extends PEToggleItem implements IAlchBagItem, IAlchCh
 	@Override
 	public boolean updateInAlchChest(@NotNull Level level, @NotNull BlockPos pos, @NotNull ItemStack stack) {
 		if (stack.getOrDefault(PEDataComponentTypes.ACTIVE, false)) {
-			IItemHandler handler = WorldHelper.getCapability(level, ItemHandler.BLOCK, pos, null);
+			IItemHandler handler = moze_intel.projecte.utils.ItemTransferAdapter.legacy(WorldHelper.getCapability(level, Capabilities.Item.BLOCK, pos, null));
 			if (handler != null) {
 				AABB aabb = new AABB(pos).inflate(5);
 				Vec3 center = aabb.getCenter();
 				for (ItemEntity e : level.getEntitiesOfClass(ItemEntity.class, aabb, ent -> !ent.isSpectator() && ent.isAlive())) {
 					WorldHelper.gravitateEntityTowards(e, center);
-					if (!level.isClientSide && e.distanceToSqr(center) < 1.21) {
+					if (!level.isClientSide() && e.distanceToSqr(center) < 1.21) {
 						ItemStack result = ItemHandlerHelper.insertItemStacked(handler, e.getItem(), false);
 						if (!result.isEmpty()) {
 							e.setItem(result);

@@ -1,6 +1,6 @@
 package moze_intel.projecte.gameObjs.gui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -15,10 +15,22 @@ public abstract class PEContainerScreen<T extends AbstractContainerMenu> extends
 		super(container, invPlayer, title);
 	}
 
+    public PEContainerScreen(T container, Inventory invPlayer, Component title, int width, int height) {
+        super(container, invPlayer, title, width, height);
+    }
+
+    protected abstract void renderBg(GuiGraphicsExtractor graphics, float partialTicks, int mouseX, int mouseY);
+
+    @Override
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        renderBg(graphics, partialTicks, mouseX, mouseY);
+        super.extractContents(graphics, mouseX, mouseY, partialTicks);
+    }
+
 	@Override
-	public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-		super.render(graphics, mouseX, mouseY, partialTicks);
-		this.renderTooltip(graphics, mouseX, mouseY);
+	public void extractRenderState(@NotNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+		super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+		this.extractTooltip(graphics, mouseX, mouseY);
 	}
 
 	@Override

@@ -54,7 +54,7 @@ public class DiviningRod extends ItemPE implements IItemMode<DiviningMode> {
 			return InteractionResult.FAIL;
 		}
 		Level level = ctx.getLevel();
-		if (level.isClientSide) {
+		if (level.isClientSide()) {
 			return InteractionResult.SUCCESS;
 		}
 		LongList emcValues = new LongArrayList();
@@ -76,12 +76,12 @@ public class DiviningRod extends ItemPE implements IItemMode<DiviningMode> {
 			long blockEmc = IEMCProxy.INSTANCE.getValue(blockStack);
 			if (blockEmc == 0) {
 				if (furnaceRecipes == null) {//Lazily init the list of furnace recipes
-					furnaceRecipes = level.getRecipeManager().getAllRecipesFor(RecipeType.SMELTING);
+					furnaceRecipes = java.util.List.copyOf(((net.minecraft.server.level.ServerLevel) level).getServer().getRecipeManager().recipeMap().byType(RecipeType.SMELTING));
 				}
 				for (RecipeHolder<SmeltingRecipe> furnaceRecipeHolder : furnaceRecipes) {
 					SmeltingRecipe furnaceRecipe = furnaceRecipeHolder.value();
-					if (furnaceRecipe.getIngredients().getFirst().test(blockStack)) {
-						long currentValue = IEMCProxy.INSTANCE.getValue(furnaceRecipe.getResultItem(level.registryAccess()));
+					if (furnaceRecipe.placementInfo().ingredients().getFirst().test(blockStack)) {
+						long currentValue = IEMCProxy.INSTANCE.getValue(moze_intel.projecte.utils.RecipeHelper.result(furnaceRecipe, level.registryAccess()));
 						if (currentValue != 0) {
 							if (!emcValues.contains(currentValue)) {
 								emcValues.add(currentValue);
@@ -106,7 +106,7 @@ public class DiviningRod extends ItemPE implements IItemMode<DiviningMode> {
 		player.sendSystemMessage(PELang.DIVINING_AVG_EMC.translate(numBlocks, totalEmc / numBlocks));
 		if (this == PEItems.MEDIUM_DIVINING_ROD.get() || this == PEItems.HIGH_DIVINING_ROD.get()) {
 			emcValues.sort(LongComparators.OPPOSITE_COMPARATOR);
-			player.sendSystemMessage(PELang.DIVINING_SECOND_MAX.translate(getOrDefault(emcValues, 0)));
+			player.sendSystemMessage(PELang.DIVINING_MAX_EMC.translate(getOrDefault(emcValues, 0)));
 			if (this == PEItems.HIGH_DIVINING_ROD.get()) {
 				player.sendSystemMessage(PELang.DIVINING_SECOND_MAX.translate(getOrDefault(emcValues, 1)));
 				player.sendSystemMessage(PELang.DIVINING_THIRD_MAX.translate(getOrDefault(emcValues, 2)));
@@ -120,18 +120,19 @@ public class DiviningRod extends ItemPE implements IItemMode<DiviningMode> {
 	}
 
 	private int getDepthFromMode(ItemStack stack) {
-		DiviningMode mode = IItemMode.super.getMode(stack);
-		if (mode.ordinal() > maxModes) {
-			//No range something went wrong
-			return 0;
-		}
-		return mode.range;
+		return getMode(stack).range;
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, @NotNull List<Component> tooltip, @NotNull TooltipFlag flags) {
-		super.appendHoverText(stack, context, tooltip, flags);
-		tooltip.add(getToolTip(stack));
+	public DiviningMode getMode(ItemStack stack) {
+		DiviningMode mode = IItemMode.super.getMode(stack);
+		return mode.ordinal() < maxModes ? mode : DiviningMode.LOW;
+	}
+
+	@Override
+	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, net.minecraft.world.item.component.TooltipDisplay display, java.util.function.Consumer<Component> tooltip, @NotNull TooltipFlag flags) {
+		super.appendHoverText(stack, context, display, tooltip, flags);
+		tooltip.accept(getToolTip(stack));
 	}
 
 	@Override
@@ -176,15 +177,8 @@ public class DiviningRod extends ItemPE implements IItemMode<DiviningMode> {
 
 		@Override
 		public DiviningMode next(ItemStack stack) {
-			if (ordinal() > ((DiviningRod) stack.getItem()).maxModes) {
-				//Don't increment
-				return this;
-			}
-			return switch (this) {
-				case LOW -> MEDIUM;
-				case MEDIUM -> HIGH;
-				case HIGH -> LOW;
-			};
+			int maxModes = ((DiviningRod) stack.getItem()).maxModes;
+			return BY_ID.apply((ordinal() + 1) % maxModes);
 		}
 	}
 }

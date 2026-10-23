@@ -14,6 +14,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public class ClientKeyHelper {
+    private static final net.minecraft.client.KeyMapping.Category CATEGORY = net.minecraft.client.KeyMapping.Category.register(moze_intel.projecte.PECore.rl("main"));
+    public static boolean hasShiftDown() {
+        var window = net.minecraft.client.Minecraft.getInstance().getWindow();
+        return InputConstants.isKeyDown(window, 340) || InputConstants.isKeyDown(window, 344);
+    }
+
 
 	private static ImmutableBiMap<PEKeybind, KeyMapping> peToMc = ImmutableBiMap.of();
 
@@ -50,7 +56,7 @@ public class ClientKeyHelper {
 		private boolean lastState;
 
 		PEKeyMapping(PEKeybind keybind, KeyModifier keyModifier, int keyCode) {
-			super(keybind.getTranslationKey(), KeyConflictContext.IN_GAME, keyModifier, InputConstants.Type.KEYSYM, keyCode, PELang.PROJECTE.getTranslationKey());
+			super(keybind.getTranslationKey(), KeyConflictContext.IN_GAME, keyModifier, InputConstants.Type.KEYSYM, keyCode, CATEGORY);
 			this.keybind = keybind;
 		}
 
@@ -61,7 +67,7 @@ public class ClientKeyHelper {
 			boolean state = isDown();
 			if (state != lastState) {
 				if (state) {
-					PacketDistributor.sendToServer(new KeyPressPKT(keybind));
+					net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new KeyPressPKT(keybind));
 				}
 				lastState = state;
 			}

@@ -118,7 +118,7 @@ public final class ItemInfo {
 	 * @apiNote While it is not required that the stack is not empty, it is expected to check yourself to make sure it is not empty.
 	 */
 	public static ItemInfo fromStack(@NotNull ItemStack stack) {
-		return new ItemInfo(stack.getItemHolder(), stack.getComponentsPatch());
+		return new ItemInfo(stack.typeHolder(), stack.getComponentsPatch());
 	}
 
 	/**
@@ -131,7 +131,7 @@ public final class ItemInfo {
 		if (stack.representsTag()) {
 			return null;
 		}
-		Optional<Holder.Reference<Item>> holder = BuiltInRegistries.ITEM.getHolder(stack.getResourceLocation());
+		Optional<Holder.Reference<Item>> holder = BuiltInRegistries.ITEM.get(stack.getIdentifier());
 		//noinspection OptionalIsPresent - Capturing lambda
 		if (holder.isEmpty()) {
 			return null;
@@ -177,7 +177,7 @@ public final class ItemInfo {
 	@Nullable
 	@SuppressWarnings("OptionalAssignedToNull")
 	public <T> T getOrNull(DataComponentType<? extends T> type) {
-		Optional<? extends T> storedComponent = componentsPatch.get(type);
+		Optional<? extends T> storedComponent = componentsPatch.getPatch(type);
 		if (storedComponent == null || storedComponent.isEmpty()) {
 			return null;
 		}

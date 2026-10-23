@@ -13,7 +13,7 @@ import net.minecraft.advancements.AdvancementType;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 import net.neoforged.neoforge.common.data.AdvancementProvider.AdvancementGenerator;
@@ -28,7 +28,7 @@ public class PEAdvancementsGenerator implements AdvancementGenerator {
 				.display(PEItems.PHILOSOPHERS_STONE,
 						PELang.PROJECTE.translate(),
 						PELang.ADVANCEMENTS_PROJECTE_DESCRIPTION.translate(),
-						ResourceLocation.withDefaultNamespace("textures/gui/advancements/backgrounds/stone.png"),
+						Identifier.withDefaultNamespace("textures/gui/advancements/backgrounds/stone.png"),
 						AdvancementType.TASK,
 						false,
 						false,

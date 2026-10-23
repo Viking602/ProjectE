@@ -28,7 +28,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.wrapper.CombinedInvWrapper;
+import moze_intel.projecte.utils.CombinedInvWrapper;
 
 public class TransmutationInventory extends CombinedInvWrapper {
 
@@ -69,7 +69,7 @@ public class TransmutationInventory extends CombinedInvWrapper {
 	}
 
 	public boolean isClient() {
-		return player.level().isClientSide;
+		return player.level().isClientSide();
 	}
 
 	/**

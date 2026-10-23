@@ -12,7 +12,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -57,14 +57,14 @@ public class EntityHomingArrow extends Arrow {
 	@Override
 	public void tick() {
 		if (tickCount > 3) {
-			if (!level().isClientSide) {
+			if (!level().isClientSide()) {
 				Entity target = getTarget();
-				if (target != null && (!target.isAlive() || this.inGround)) {
+				if (target != null && (!target.isAlive() || this.isInGround())) {
 					entityData.set(DW_TARGET_ID, NO_TARGET);
 					target = null;
 				}
 
-				if (target == null && !this.inGround && newTargetCooldown <= 0) {
+				if (target == null && !this.isInGround() && newTargetCooldown <= 0) {
 					findNewTarget();
 				} else {
 					newTargetCooldown--;
@@ -72,7 +72,7 @@ public class EntityHomingArrow extends Arrow {
 			}
 
 			Entity target = getTarget();
-			if (target != null && !this.inGround) {
+			if (target != null && !this.isInGround()) {
 				Vec3 arrowMotion = getDeltaMovement();
 				Vec3 particlePos = position().add(arrowMotion.scale(0.25));
 				Vec3 particleSpeed = arrowMotion.scale(-0.5).add(0, 0.2, 0);

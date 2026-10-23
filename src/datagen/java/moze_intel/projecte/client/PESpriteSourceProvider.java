@@ -9,13 +9,13 @@ import net.minecraft.client.renderer.texture.atlas.sources.DirectoryLister;
 import net.minecraft.client.renderer.texture.atlas.sources.SingleFile;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.common.data.SpriteSourceProvider;
 
 public class PESpriteSourceProvider extends SpriteSourceProvider {
 
-	private final Set<ResourceLocation> trackedSingles = new HashSet<>();
+	private final Set<Identifier> trackedSingles = new HashSet<>();
 
 	public PESpriteSourceProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider, ExistingFileHelper fileHelper) {
 		super(output, lookupProvider, PECore.MODID, fileHelper);
@@ -29,8 +29,8 @@ public class PESpriteSourceProvider extends SpriteSourceProvider {
 		addFiles(atlas(BLOCKS_ATLAS), PECore.rl("curios/transmutation_tablet"));
 	}
 
-	protected void addFiles(SourceList atlas, ResourceLocation... resourceLocations) {
-		for (ResourceLocation rl : resourceLocations) {
+	protected void addFiles(SourceList atlas, Identifier... resourceLocations) {
+		for (Identifier rl : resourceLocations) {
 			//Only add this source if we haven't already added it as a direct single file source
 			if (trackedSingles.add(rl)) {
 				atlas.addSource(new SingleFile(rl, Optional.empty()));

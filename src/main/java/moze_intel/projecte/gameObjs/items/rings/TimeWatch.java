@@ -30,7 +30,7 @@ import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
@@ -38,7 +38,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -62,38 +62,39 @@ public class TimeWatch extends PEToggleItem implements IPedestalItem, IItemCharg
 
 	@NotNull
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, @NotNull InteractionHand hand) {
+	public InteractionResult use(Level level, Player player, @NotNull InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
 			if (!ProjectEConfig.server.items.enableTimeWatch.get()) {
 				player.sendSystemMessage(PELang.TIME_WATCH_DISABLED.translate());
-				return InteractionResultHolder.fail(stack);
+				return InteractionResult.FAIL;
 			}
 			stack.update(PEDataComponentTypes.TIME_WATCH_MODE, TimeWatchMode.OFF, TimeWatchMode::next);
 			player.sendSystemMessage(PELang.TIME_WATCH_MODE_SWITCH.translate(getTimeName(stack)));
 		}
-		return InteractionResultHolder.success(stack);
+		return InteractionResult.SUCCESS.heldItemTransformedTo(stack);
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slot, boolean isHeld) {
-		super.inventoryTick(stack, level, entity, slot, isHeld);
-		if (!(entity instanceof Player player) || !hotBarOrOffHand(slot) || !ProjectEConfig.server.items.enableTimeWatch.get()) {
+	public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.server.level.ServerLevel level, @NotNull Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+		super.inventoryTick(stack, level, entity, slot);
+		boolean isHeld = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+		if (!(entity instanceof Player player) || !hotBarOrOffHand(slot, entity, stack) || !ProjectEConfig.server.items.enableTimeWatch.get()) {
 			return;
 		}
 		TimeWatchMode timeControl = stack.getOrDefault(PEDataComponentTypes.TIME_WATCH_MODE, TimeWatchMode.OFF);
-		if (timeControl != TimeWatchMode.OFF && !level.isClientSide && level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
+		if (timeControl != TimeWatchMode.OFF && !level.isClientSide() && moze_intel.projecte.utils.ClockHelper.isRunning(level)) {
 			ServerLevel serverWorld = (ServerLevel) level;
 			long scaledCharge = 4L * (getCharge(stack) + 1);
 			if (timeControl == TimeWatchMode.REWIND) {//rewind
-				serverWorld.setDayTime(Math.max(level.getDayTime() - scaledCharge, 0));
-			} else if (level.getDayTime() > Long.MAX_VALUE - scaledCharge) {//Fast forward (would go past max long)
-				serverWorld.setDayTime(Long.MAX_VALUE);
+				moze_intel.projecte.utils.ClockHelper.setTime(serverWorld, Math.max(moze_intel.projecte.utils.ClockHelper.getTime(level) - scaledCharge, 0));
+			} else if (moze_intel.projecte.utils.ClockHelper.getTime(level) > Long.MAX_VALUE - scaledCharge) {//Fast forward (would go past max long)
+				moze_intel.projecte.utils.ClockHelper.setTime(serverWorld, Long.MAX_VALUE);
 			} else {//Fast forward
-				serverWorld.setDayTime(level.getDayTime() + scaledCharge);
+				moze_intel.projecte.utils.ClockHelper.setTime(serverWorld, moze_intel.projecte.utils.ClockHelper.getTime(level) + scaledCharge);
 			}
 		}
-		if (level.isClientSide || !stack.getOrDefault(PEDataComponentTypes.ACTIVE, false)) {
+		if (level.isClientSide() || !stack.getOrDefault(PEDataComponentTypes.ACTIVE, false)) {
 			return;
 		}
 		int charge = getCharge(stack);
@@ -136,7 +137,7 @@ public class TimeWatch extends PEToggleItem implements IPedestalItem, IItemCharg
 	private void speedUpBlockEntities(Level level, int bonusTicks, AABB effectBounds) {
 		for (BlockEntity blockEntity : WorldHelper.getBlockEntitiesWithinAABB(level, effectBounds, VALID_TARGET)) {
 			BlockPos pos = blockEntity.getBlockPos();
-			if (level.shouldTickBlocksAt(ChunkPos.asLong(pos))) {
+			if (level.shouldTickBlocksAt(ChunkPos.containing(pos).pack())) {
 				LevelChunk chunk = level.getChunkAt(pos);
 				RebindableTickingBlockEntityWrapper tickingWrapper = chunk.tickersInLevel.get(pos);
 				if (tickingWrapper != null && !tickingWrapper.isRemoved()) {
@@ -144,7 +145,7 @@ public class TimeWatch extends PEToggleItem implements IPedestalItem, IItemCharg
 						//In general this should always be the case, so we inline some of the logic
 						// to optimize the calls to try and make extra ticks as cheap as possible
 						if (chunk.isTicking(pos)) {
-							ProfilerFiller profiler = level.getProfiler();
+							ProfilerFiller profiler = net.minecraft.util.profiling.Profiler.get();
 							//Note: We intentionally don't start tracking with the TimeTracker that neo patches in
 							// because we don't want to override tracking for the pedestal
 							profiler.push(tickingWrapper::getType);
@@ -187,7 +188,7 @@ public class TimeWatch extends PEToggleItem implements IPedestalItem, IItemCharg
 						if (!WorldHelper.isCrop(state)) {// All plants should be sped using Harvest Goddess
 							pos = pos.immutable();
 							for (int i = 0; i < bonusTicks; i++) {
-								state.randomTick(serverLevel, pos, level.random);
+								state.randomTick(serverLevel, pos, level.getRandom());
 							}
 						}
 					}
@@ -205,18 +206,18 @@ public class TimeWatch extends PEToggleItem implements IPedestalItem, IItemCharg
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, @NotNull List<Component> tooltip, @NotNull TooltipFlag flags) {
-		super.appendHoverText(stack, context, tooltip, flags);
-		tooltip.add(PELang.TOOLTIP_TIME_WATCH_1.translate());
-		tooltip.add(PELang.TOOLTIP_TIME_WATCH_2.translate(Component.keybind("key.use")));
-		tooltip.add(PELang.TIME_WATCH_MODE.translate(getTimeName(stack)));
+	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, net.minecraft.world.item.component.TooltipDisplay display, java.util.function.Consumer<Component> tooltip, @NotNull TooltipFlag flags) {
+		super.appendHoverText(stack, context, display, tooltip, flags);
+		tooltip.accept(PELang.TOOLTIP_TIME_WATCH_1.translate());
+		tooltip.accept(PELang.TOOLTIP_TIME_WATCH_2.translate(Component.keybind("key.use")));
+		tooltip.accept(PELang.TIME_WATCH_MODE.translate(getTimeName(stack)));
 	}
 
 	@Override
 	public <PEDESTAL extends BlockEntity & IDMPedestal> boolean updateInPedestal(@NotNull ItemStack stack, @NotNull Level level, @NotNull BlockPos pos,
 			@NotNull PEDESTAL pedestal) {
 		// Change from old EE2 behaviour (universally increased tickrate) for safety and impl reasons.
-		if (!level.isClientSide && ProjectEConfig.server.items.enableTimeWatch.get()) {
+		if (!level.isClientSide() && ProjectEConfig.server.items.enableTimeWatch.get()) {
 			AABB effectBounds = pedestal.getEffectBounds();
 			speedUpBlocks(level, ProjectEConfig.server.effects.timePedBonus.get(), effectBounds);
 			slowMobs(level, effectBounds, ProjectEConfig.server.effects.timePedMobSlowness.get());

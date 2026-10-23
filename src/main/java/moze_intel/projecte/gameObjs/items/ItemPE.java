@@ -96,7 +96,13 @@ public class ItemPE extends Item {
 		return true;
 	}
 
-	public static boolean hotBarOrOffHand(int slot) {
-		return slot < Inventory.getSelectionSize() || slot == Inventory.SLOT_OFFHAND;
+	public static boolean hotBarOrOffHand(net.minecraft.world.entity.EquipmentSlot slot, net.minecraft.world.entity.Entity owner, ItemStack stack) {
+        if (slot == net.minecraft.world.entity.EquipmentSlot.OFFHAND || slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND) return true;
+        if (owner instanceof Player player) {
+            for (int index = 0; index < Inventory.getSelectionSize(); index++) {
+                if (player.getInventory().getItem(index) == stack) return true;
+            }
+        }
+        return false;
 	}
 }

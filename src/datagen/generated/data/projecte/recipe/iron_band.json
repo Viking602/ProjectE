@@ -2,16 +2,10 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "I": {
-      "tag": "c:ingots/iron"
-    },
+    "I": "#c:ingots/iron",
     "L": [
-      {
-        "item": "minecraft:lava_bucket"
-      },
-      {
-        "item": "projecte:volcanite_amulet"
-      }
+      "minecraft:lava_bucket",
+      "projecte:volcanite_amulet"
     ]
   },
   "pattern": [

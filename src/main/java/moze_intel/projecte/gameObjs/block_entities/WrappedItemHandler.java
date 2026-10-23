@@ -18,6 +18,10 @@ public class WrappedItemHandler implements IItemHandlerModifiable {
 		this.mode = mode;
 	}
 
+	public IItemHandlerModifiable backingInventory() {
+		return compose;
+	}
+
 	@Override
 	public int getSlots() {
 		return compose.getSlots();

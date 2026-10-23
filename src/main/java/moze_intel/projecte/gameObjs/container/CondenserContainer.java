@@ -13,7 +13,7 @@ import moze_intel.projecte.network.packets.to_client.container.UpdateCondenserLo
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
@@ -69,7 +69,7 @@ public class CondenserContainer extends EmcChestBlockEntityContainer<CondenserBl
 	}
 
 	@Override
-	public void clicked(int slot, int button, @NotNull ClickType flag, @NotNull Player player) {
+	public void clicked(int slot, int button, @NotNull ContainerInput flag, @NotNull Player player) {
 		if (slot == 0) {
 			if (blockEntity.attemptCondenserSet(player)) {
 				this.broadcastChanges();

@@ -20,7 +20,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SwordItem;
+
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.state.BlockState;
@@ -28,31 +28,23 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
 import org.jetbrains.annotations.NotNull;
 
-public class PESword extends SwordItem implements IExtraFunction, IItemCharge, IBarHelper, IHasConditionalAttributes {
+public class PESword extends Item implements IExtraFunction, IItemCharge, IBarHelper, IHasConditionalAttributes {
 
 	private final IMatterType matterType;
 	private final int numCharges;
 
 	public PESword(IMatterType matterType, int numCharges, int damage, Properties props) {
-		super(matterType, props.attributes(createAttributes(matterType, damage, -2.4F))
-				.component(PEDataComponentTypes.CHARGE, 0)
-				.component(PEDataComponentTypes.STORED_EMC, 0L),
-				new Tool(List.of(
-						Tool.Rule.deniesDrops(matterType.getIncorrectBlocksForDrops()),
-						Tool.Rule.minesAndDrops(PETags.Blocks.MINEABLE_WITH_PE_SWORD, matterType.getSpeed()),
-						Tool.Rule.overrideSpeed(BlockTags.SWORD_EFFICIENT, 1.5F)
-				), 1.0F, 2)
-		);
+		super(moze_intel.projecte.utils.MatterToolProperties.apply(matterType, PETags.Blocks.MINEABLE_WITH_PE_SWORD, props)
+                .attributes(moze_intel.projecte.utils.MatterToolProperties.attributes(matterType, damage, -2.4F))
+                .component(PEDataComponentTypes.CHARGE, 0).component(PEDataComponentTypes.STORED_EMC, 0L));
 		this.matterType = matterType;
 		this.numCharges = numCharges;
 	}
 
-	@Override
 	public boolean isEnchantable(@NotNull ItemStack stack) {
 		return false;
 	}
 
-	@Override
 	public boolean isBookEnchantable(@NotNull ItemStack stack, @NotNull ItemStack book) {
 		return false;
 	}
@@ -103,9 +95,8 @@ public class PESword extends SwordItem implements IExtraFunction, IItemCharge, I
 	}
 
 	@Override
-	public boolean hurtEnemy(@NotNull ItemStack stack, @NotNull LivingEntity damaged, @NotNull LivingEntity damager) {
+	public void hurtEnemy(@NotNull ItemStack stack, @NotNull LivingEntity damaged, @NotNull LivingEntity damager) {
 		ToolHelper.attackWithCharge(stack, damaged, damager, 1.0F);
-		return true;
 	}
 
 	@NotNull

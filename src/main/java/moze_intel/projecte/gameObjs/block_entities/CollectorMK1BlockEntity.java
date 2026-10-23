@@ -33,7 +33,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.wrapper.CombinedInvWrapper;
+import moze_intel.projecte.utils.CombinedInvWrapper;
 import net.neoforged.neoforge.items.wrapper.RangedWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -279,12 +279,18 @@ public class CollectorMK1BlockEntity extends EmcBlockEntity implements MenuProvi
 		return (double) charge / max;
 	}
 
-	public int getSunLevel() {
+	@Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        clearLocked();
+        super.preRemoveSideEffects(pos, state);
+    }
+
+    public int getSunLevel() {
 		return level == null ? 0 : getSunLevel(level, worldPosition);
 	}
 
 	public static int getSunLevel(@NotNull Level level, @NotNull BlockPos pos) {
-		if (level.dimensionType().ultraWarm()) {
+		if (level.environmentAttributes().getValue(net.minecraft.world.attribute.EnvironmentAttributes.WATER_EVAPORATES, pos)) {
 			return 16;
 		}
 		return level.getMaxLocalRawBrightness(pos.above()) + 1;
@@ -316,19 +322,19 @@ public class CollectorMK1BlockEntity extends EmcBlockEntity implements MenuProvi
 	}
 
 	@Override
-	public void loadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		unprocessedEMC = tag.getDouble("unprocessed_emc");
-		input.deserializeNBT(registries, tag.getCompound("input"));
-		auxSlots.deserializeNBT(registries, tag.getCompound("aux_slots"));
+	public void loadAdditional(@NotNull net.minecraft.world.level.storage.ValueInput tag) {
+		super.loadAdditional(tag);
+		unprocessedEMC = tag.getDoubleOr("unprocessed_emc", 0D);
+		input.deserialize(tag.childOrEmpty("input"));
+		auxSlots.deserialize(tag.childOrEmpty("aux_slots"));
 	}
 
 	@Override
-	protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
+	protected void saveAdditional(@NotNull net.minecraft.world.level.storage.ValueOutput tag) {
+		super.saveAdditional(tag);
 		tag.putDouble("unprocessed_emc", unprocessedEMC);
-		tag.put("input", input.serializeNBT(registries));
-		tag.put("aux_slots", auxSlots.serializeNBT(registries));
+		input.serialize(tag.child("input"));
+		auxSlots.serialize(tag.child("aux_slots"));
 	}
 
 	private static void sendRelayBonus(@NotNull Level level, @NotNull BlockPos pos) {

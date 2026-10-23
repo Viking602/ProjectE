@@ -1,0 +1,128 @@
+{
+  "model": {
+    "type": "minecraft:range_dispatch",
+    "property": "projecte:active",
+    "fallback": {
+      "type": "minecraft:range_dispatch",
+      "property": "projecte:mode",
+      "fallback": {
+        "type": "minecraft:model",
+        "model": "projecte:item/arcana_ring"
+      },
+      "entries": [
+        {
+          "threshold": 0.0,
+          "model": {
+            "type": "minecraft:model",
+            "model": "projecte:item/arcana_ring"
+          }
+        },
+        {
+          "threshold": 1.0,
+          "model": {
+            "type": "minecraft:model",
+            "model": "projecte:item/arcana_ring"
+          }
+        },
+        {
+          "threshold": 2.0,
+          "model": {
+            "type": "minecraft:model",
+            "model": "projecte:item/arcana_ring"
+          }
+        },
+        {
+          "threshold": 3.0,
+          "model": {
+            "type": "minecraft:model",
+            "model": "projecte:item/arcana_ring"
+          }
+        }
+      ]
+    },
+    "entries": [
+      {
+        "threshold": 0.0,
+        "model": {
+          "type": "minecraft:range_dispatch",
+          "property": "projecte:mode",
+          "fallback": {
+            "type": "minecraft:model",
+            "model": "projecte:item/arcana_ring"
+          },
+          "entries": [
+            {
+              "threshold": 0.0,
+              "model": {
+                "type": "minecraft:model",
+                "model": "projecte:item/arcana_zero_off"
+              }
+            },
+            {
+              "threshold": 1.0,
+              "model": {
+                "type": "minecraft:model",
+                "model": "projecte:item/arcana_ignition_off"
+              }
+            },
+            {
+              "threshold": 2.0,
+              "model": {
+                "type": "minecraft:model",
+                "model": "projecte:item/arcana_harv_off"
+              }
+            },
+            {
+              "threshold": 3.0,
+              "model": {
+                "type": "minecraft:model",
+                "model": "projecte:item/arcana_swrg_off"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "threshold": 1.0,
+        "model": {
+          "type": "minecraft:range_dispatch",
+          "property": "projecte:mode",
+          "fallback": {
+            "type": "minecraft:model",
+            "model": "projecte:item/arcana_ring"
+          },
+          "entries": [
+            {
+              "threshold": 0.0,
+              "model": {
+                "type": "minecraft:model",
+                "model": "projecte:item/arcana_zero_on"
+              }
+            },
+            {
+              "threshold": 1.0,
+              "model": {
+                "type": "minecraft:model",
+                "model": "projecte:item/arcana_ignition_on"
+              }
+            },
+            {
+              "threshold": 2.0,
+              "model": {
+                "type": "minecraft:model",
+                "model": "projecte:item/arcana_harv_on"
+              }
+            },
+            {
+              "threshold": 3.0,
+              "model": {
+                "type": "minecraft:model",
+                "model": "projecte:item/arcana_swrg_on"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -65,7 +65,7 @@ public class ThreadCheckUpdate extends Thread {
 			hasSentMessage = true;
 			player.sendSystemMessage(PELang.UPDATE_AVAILABLE.translate(target));
 			player.sendSystemMessage(PELang.UPDATE_GET_IT.translate());
-			player.sendSystemMessage(TextComponentUtil.build(new ClickEvent(ClickEvent.Action.OPEN_URL, curseURL), curseURL));
+			player.sendSystemMessage(TextComponentUtil.build(new ClickEvent.OpenUrl(java.net.URI.create(curseURL)), curseURL));
 		}
 	}
 }

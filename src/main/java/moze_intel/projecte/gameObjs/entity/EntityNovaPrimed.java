@@ -40,12 +40,12 @@ public abstract class EntityNovaPrimed extends PrimedTnt {
 	}
 
 	@Override
-	protected void explode() {
+	public void explode() {
 		WorldHelper.createNovaExplosion(level(), this, getX(), getY(), getZ(), getExplosionPower());
 	}
 
 	@Override
-	public ItemStack getPickedResult(@NotNull HitResult target) {
+	public ItemStack getPickResult() {
 		return new ItemStack(getBlock());
 	}
 }

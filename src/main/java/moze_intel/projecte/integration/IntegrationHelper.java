@@ -1,8 +1,7 @@
 package moze_intel.projecte.integration;
 
 import moze_intel.projecte.integration.curios.CurioItemCapability;
-import moze_intel.projecte.integration.top.TOPIntegration;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
@@ -16,12 +15,13 @@ public class IntegrationHelper {
 	public static final String EMI_MODID = "emi";
 	public static final String TOP_MODID = "theoneprobe";
 
-	public static final EntityCapability<IItemHandler, Void> CURIO_ITEM_HANDLER = EntityCapability.createVoid(ResourceLocation.fromNamespaceAndPath(CURIO_MODID, "item_handler"), IItemHandler.class);
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public static final EntityCapability<net.neoforged.neoforge.transfer.ResourceHandler<net.neoforged.neoforge.transfer.item.ItemResource>, Void> CURIO_ITEM_HANDLER =
+			(EntityCapability) EntityCapability.createVoid(Identifier.fromNamespaceAndPath(CURIO_MODID, "item_handler"), net.neoforged.neoforge.transfer.ResourceHandler.class);
 
 	public static void sendIMCMessages(InterModEnqueueEvent event) {
-		ModList modList = ModList.get();
-		if (modList.isLoaded(TOP_MODID)) {
-			TOPIntegration.sendIMC(event);
+		if (ModList.get().isLoaded(TOP_MODID)) {
+			moze_intel.projecte.integration.top.TOPIntegration.sendIMC(event);
 		}
 	}
 
@@ -29,5 +29,9 @@ public class IntegrationHelper {
 		if (ModList.get().isLoaded(CURIO_MODID)) {
 			CurioItemCapability.register(event, item);
 		}
+	}
+
+	public static net.neoforged.neoforge.items.IItemHandlerModifiable getEquippedCurios(net.minecraft.world.entity.player.Player player) {
+		return ModList.get().isLoaded(CURIO_MODID) ? CurioItemCapability.getEquippedCurios(player) : null;
 	}
 }

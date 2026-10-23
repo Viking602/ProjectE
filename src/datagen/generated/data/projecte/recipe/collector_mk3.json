@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "G": {
-      "item": "minecraft:glowstone"
-    },
-    "P": {
-      "item": "projecte:collector_mk2"
-    },
-    "U": {
-      "item": "projecte:red_matter"
-    }
+    "G": "minecraft:glowstone",
+    "P": "projecte:collector_mk2",
+    "U": "projecte:red_matter"
   },
   "pattern": [
     "GUG",

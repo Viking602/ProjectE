@@ -10,7 +10,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Player;
@@ -31,35 +31,38 @@ public class MindStone extends PEToggleItem implements IPedestalItem {
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slot, boolean isHeld) {
-		super.inventoryTick(stack, level, entity, slot, isHeld);
-		if (!level.isClientSide && hotBarOrOffHand(slot) && entity instanceof Player player) {
+	public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.server.level.ServerLevel level, @NotNull Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+		super.inventoryTick(stack, level, entity, slot);
+		boolean isHeld = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+		if (!level.isClientSide() && hotBarOrOffHand(slot, entity, stack) && entity instanceof Player player) {
 			if (stack.getOrDefault(PEDataComponentTypes.ACTIVE, false) && getXP(player) > 0) {
-				int toAdd = Math.min(getXP(player), TRANSFER_RATE);
-				addStoredXP(stack, toAdd);
-				removeXP(player, TRANSFER_RATE);
+				int toAdd = Math.min(Math.min(getXP(player), TRANSFER_RATE), Integer.MAX_VALUE - getStoredXP(stack));
+				if (toAdd > 0) {
+					addStoredXP(stack, toAdd);
+					removeXP(player, toAdd);
+				}
 			}
 		}
 	}
 
 	@NotNull
 	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, @NotNull InteractionHand hand) {
+	public InteractionResult use(Level level, Player player, @NotNull InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (!level.isClientSide && !stack.getOrDefault(PEDataComponentTypes.ACTIVE, false) && getStoredXP(stack) != 0) {
+		if (!level.isClientSide() && !stack.getOrDefault(PEDataComponentTypes.ACTIVE, false) && getStoredXP(stack) != 0) {
 			int toAdd = removeStoredXP(stack, TRANSFER_RATE);
 			if (toAdd > 0) {
 				addXP(player, toAdd);
 			}
 		}
-		return InteractionResultHolder.success(stack);
+		return InteractionResult.SUCCESS.heldItemTransformedTo(stack);
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, @NotNull List<Component> tooltip, @NotNull TooltipFlag flags) {
-		super.appendHoverText(stack, context, tooltip, flags);
+	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, net.minecraft.world.item.component.TooltipDisplay display, java.util.function.Consumer<Component> tooltip, @NotNull TooltipFlag flags) {
+		super.appendHoverText(stack, context, display, tooltip, flags);
 		int storedXp = stack.getOrDefault(PEDataComponentTypes.STORED_EXP, 0);
-		tooltip.add(PELang.TOOLTIP_STORED_XP.translateColored(ChatFormatting.DARK_GREEN, ChatFormatting.GREEN, String.format("%,d", storedXp)));
+		tooltip.accept(PELang.TOOLTIP_STORED_XP.translateColored(ChatFormatting.DARK_GREEN, ChatFormatting.GREEN, String.format("%,d", storedXp)));
 	}
 
 
@@ -155,7 +158,7 @@ public class MindStone extends PEToggleItem implements IPedestalItem {
 		Vec3 target = pos.getCenter();
 		for (ExperienceOrb orb : level.getEntitiesOfClass(ExperienceOrb.class, pedestal.getEffectBounds())) {
 			WorldHelper.gravitateEntityTowards(orb, target);
-			if (!level.isClientSide && orb.distanceToSqr(target) < 1.21) {
+			if (!level.isClientSide() && orb.distanceToSqr(target) < 1.21) {
 				suckXP(orb, stack);
 				sucked = true;
 			}
@@ -165,11 +168,11 @@ public class MindStone extends PEToggleItem implements IPedestalItem {
 
 	private void suckXP(ExperienceOrb orb, ItemStack mindStone) {
 		long l = getStoredXP(mindStone);
-		if (l + orb.value > Integer.MAX_VALUE) {
-			orb.value = (int) (l + orb.value - Integer.MAX_VALUE);
+		if (l + orb.getValue() > Integer.MAX_VALUE) {
+			orb.setValue((int) (l + orb.getValue() - Integer.MAX_VALUE));
 			setStoredXP(mindStone, Integer.MAX_VALUE);
 		} else {
-			addStoredXP(mindStone, orb.value);
+			addStoredXP(mindStone, orb.getValue());
 			orb.discard();
 		}
 	}

@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "O": {
-      "tag": "c:obsidians/normal"
-    },
-    "P": {
-      "item": "projecte:relay_mk2"
-    },
-    "U": {
-      "item": "projecte:red_matter"
-    }
+    "O": "#c:obsidians/normal",
+    "P": "projecte:relay_mk2",
+    "U": "projecte:red_matter"
   },
   "pattern": [
     "OUO",

@@ -33,7 +33,7 @@ public class DMPedestalBlockEntity extends EmcBlockEntity implements IDMPedestal
 		@Override
 		public void onContentsChanged(int slot) {
 			super.onContentsChanged(slot);
-			if (level != null && !level.isClientSide) {
+			if (level != null && !level.isClientSide()) {
 				//If an item got added via the item handler, then rerender the block
 				BlockState state = getBlockState();
 				level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_IMMEDIATE);
@@ -92,7 +92,7 @@ public class DMPedestalBlockEntity extends EmcBlockEntity implements IDMPedestal
 		level.addParticle(ParticleTypes.FLAME, x + 0.8, y + 0.3, z + 0.2, 0, 0, 0);
 		level.addParticle(ParticleTypes.FLAME, x + 0.8, y + 0.3, z + 0.5, 0, 0, 0);
 		level.addParticle(ParticleTypes.FLAME, x + 0.8, y + 0.3, z + 0.8, 0, 0, 0);
-		RandomSource rand = level.random;
+		RandomSource rand = level.getRandom();
 		for (int i = 0; i < 3; ++i) {
 			int xDirection = rand.nextBoolean() ? -1 : 1;
 			int zDirection = rand.nextBoolean() ? -1 : 1;
@@ -128,18 +128,18 @@ public class DMPedestalBlockEntity extends EmcBlockEntity implements IDMPedestal
 	}
 
 	@Override
-	public void loadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		inventory.deserializeNBT(registries, tag);
-		isActive = tag.getBoolean("active");
-		activityCooldown = tag.getInt("activity_cooldown");
-		previousRedstoneState = tag.getBoolean("powered");
+	public void loadAdditional(@NotNull net.minecraft.world.level.storage.ValueInput tag) {
+		super.loadAdditional(tag);
+		inventory.deserialize(tag);
+		isActive = tag.getBooleanOr("active", false);
+		activityCooldown = tag.getIntOr("activity_cooldown", 0);
+		previousRedstoneState = tag.getBooleanOr("powered", false);
 	}
 
 	@Override
-	protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.merge(inventory.serializeNBT(registries));
+	protected void saveAdditional(@NotNull net.minecraft.world.level.storage.ValueOutput tag) {
+		super.saveAdditional(tag);
+		inventory.serialize(tag);
 		tag.putBoolean("active", getActive());
 		tag.putInt("activity_cooldown", activityCooldown);
 		tag.putBoolean("powered", previousRedstoneState);
@@ -153,20 +153,20 @@ public class DMPedestalBlockEntity extends EmcBlockEntity implements IDMPedestal
 		if (newState != this.getActive()) {
 			if (newState) {
 				level.playSound(null, pos, PESoundEvents.CHARGE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-				for (int i = 0; i < level.random.nextInt(35) + 10; ++i) {
+				for (int i = 0; i < level.getRandom().nextInt(35) + 10; ++i) {
 					level.addParticle(ParticleTypes.WITCH,
-							pos.getX() + 0.5 + level.random.nextGaussian() * 0.12999999523162842D,
-							pos.getY() + 1 + level.random.nextGaussian() * 0.12999999523162842D,
-							pos.getZ() + 0.5 + level.random.nextGaussian() * 0.12999999523162842D,
+							pos.getX() + 0.5 + level.getRandom().nextGaussian() * 0.12999999523162842D,
+							pos.getY() + 1 + level.getRandom().nextGaussian() * 0.12999999523162842D,
+							pos.getZ() + 0.5 + level.getRandom().nextGaussian() * 0.12999999523162842D,
 							0.0D, 0.0D, 0.0D);
 				}
 			} else {
 				level.playSound(null, pos, PESoundEvents.UNCHARGE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-				for (int i = 0; i < level.random.nextInt(35) + 10; ++i) {
+				for (int i = 0; i < level.getRandom().nextInt(35) + 10; ++i) {
 					level.addParticle(ParticleTypes.SMOKE,
-							pos.getX() + 0.5 + level.random.nextGaussian() * 0.12999999523162842D,
-							pos.getY() + 1 + level.random.nextGaussian() * 0.12999999523162842D,
-							pos.getZ() + 0.5 + level.random.nextGaussian() * 0.12999999523162842D,
+							pos.getX() + 0.5 + level.getRandom().nextGaussian() * 0.12999999523162842D,
+							pos.getY() + 1 + level.getRandom().nextGaussian() * 0.12999999523162842D,
+							pos.getZ() + 0.5 + level.getRandom().nextGaussian() * 0.12999999523162842D,
 							0.0D, 0.0D, 0.0D);
 				}
 			}

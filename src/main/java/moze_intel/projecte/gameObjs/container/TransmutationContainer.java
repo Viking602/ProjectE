@@ -20,10 +20,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.capabilities.Capabilities.ItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -125,7 +125,7 @@ public class TransmutationContainer extends PEHandContainer {
 				//Note: We can just set the size here as newStack is a copy stack used for modifications
 				stack.setCount(stack.getMaxStackSize());
 				//Check how much we can fit of the stack
-				int itemsRoomFor = stack.getCount() - ItemHelper.simulateFit(player.getInventory().items, stack);
+				int itemsRoomFor = stack.getCount() - ItemHelper.simulateFit(player.getInventory().getNonEquipmentItems(), stack);
 				if (itemsRoomFor == 1) {
 					long availableEMC = transmutationInventory.getAvailableEmcAsLong();
 					if (itemEmc > availableEMC) {
@@ -137,7 +137,7 @@ public class TransmutationContainer extends PEHandContainer {
 						transmutationInventory.removeEmc(BigInteger.valueOf(itemEmc));
 					}
 					stack.setCount(1);
-					ItemHandlerHelper.insertItemStacked(player.getCapability(ItemHandler.ENTITY), stack, false);
+					ItemHandlerHelper.insertItemStacked(moze_intel.projecte.utils.ItemTransferAdapter.legacy(player.getCapability(Capabilities.Item.ENTITY)), stack, false);
 				} else if (itemsRoomFor > 1) {
 					BigInteger availableEMC = transmutationInventory.getAvailableEmc();
 					BigInteger emc = BigInteger.valueOf(itemEmc);
@@ -158,7 +158,7 @@ public class TransmutationContainer extends PEHandContainer {
 					}
 					//Set the stack size to what we found the max value is we have room for (capped at the stack's own max size)
 					stack.setCount(itemsRoomFor);
-					ItemHandlerHelper.insertItemStacked(player.getCapability(ItemHandler.ENTITY), stack, false);
+					ItemHandlerHelper.insertItemStacked(moze_intel.projecte.utils.ItemTransferAdapter.legacy(player.getCapability(Capabilities.Item.ENTITY)), stack, false);
 				}
 			}
 		} else if (slotIndex > 26) {
@@ -191,11 +191,11 @@ public class TransmutationContainer extends PEHandContainer {
 	}
 
 	@Override
-	public void clickPostValidate(int slotIndex, int dragType, @NotNull ClickType clickType, @NotNull Player player) {
-		if (player.level().isClientSide && transmutationInventory.getHandlerForSlot(slotIndex) == transmutationInventory.outputs) {
+	public void clickPostValidate(int slotIndex, int dragType, @NotNull ContainerInput clickType, @NotNull Player player) {
+		if (player.level().isClientSide() && transmutationInventory.getHandlerForSlot(slotIndex) == transmutationInventory.outputs) {
 			Slot slot = tryGetSlot(slotIndex);
 			if (slot != null) {
-				PacketDistributor.sendToServer(new SearchUpdatePKT(transmutationInventory.getIndexFromSlot(slotIndex), slot.getItem()));
+				net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new SearchUpdatePKT(transmutationInventory.getIndexFromSlot(slotIndex), slot.getItem()));
 			}
 		}
 		super.clickPostValidate(slotIndex, dragType, clickType, player);

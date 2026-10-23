@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.wrapper.CombinedInvWrapper;
+import moze_intel.projecte.utils.CombinedInvWrapper;
 import org.jetbrains.annotations.NotNull;
 
 public class CondenserMK2BlockEntity extends CondenserBlockEntity {
@@ -70,15 +70,15 @@ public class CondenserMK2BlockEntity extends CondenserBlockEntity {
 	}
 
 	@Override
-	public void loadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		getOutput().deserializeNBT(registries, tag.getCompound("output"));
+	public void loadAdditional(@NotNull net.minecraft.world.level.storage.ValueInput tag) {
+		super.loadAdditional(tag);
+		getOutput().deserialize(tag.childOrEmpty("output"));
 	}
 
 	@Override
-	protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.put("output", getOutput().serializeNBT(registries));
+	protected void saveAdditional(@NotNull net.minecraft.world.level.storage.ValueOutput tag) {
+		super.saveAdditional(tag);
+		getOutput().serialize(tag.child("output"));
 	}
 
 	@Override

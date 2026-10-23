@@ -20,7 +20,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -30,7 +30,7 @@ import net.minecraft.world.level.block.entity.PotDecorations;
 //@RecipeTypeMapper//TODO: Evaluate if we want to eventually move from the component processor to just premapping values for all pots
 public class DecoratedPotMapper extends SpecialRecipeMapper<DecoratedPotRecipe> {
 
-	private static final ResourceLocation DECORATED_POT = BuiltInRegistries.ITEM.getKey(Items.DECORATED_POT);
+	private static final Identifier DECORATED_POT = BuiltInRegistries.ITEM.getKey(Items.DECORATED_POT);
 
 	@Override
 	protected Class<DecoratedPotRecipe> getRecipeClass() {
@@ -39,7 +39,7 @@ public class DecoratedPotMapper extends SpecialRecipeMapper<DecoratedPotRecipe> 
 
 	@Override
 	protected boolean handleRecipe(IMappingCollector<NormalizedSimpleStack, Long> mapper, RegistryAccess registryAccess, INSSFakeGroupManager fakeGroupManager) {
-		Optional<Named<Item>> tag = BuiltInRegistries.ITEM.getTag(ItemTags.DECORATED_POT_INGREDIENTS);
+		Optional<Named<Item>> tag = BuiltInRegistries.ITEM.get(ItemTags.DECORATED_POT_INGREDIENTS);
 		if (tag.isEmpty()) {
 			return false;
 		}

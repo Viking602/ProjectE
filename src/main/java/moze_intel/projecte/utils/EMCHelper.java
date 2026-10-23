@@ -20,12 +20,12 @@ import moze_intel.projecte.integration.IntegrationHelper;
 import moze_intel.projecte.utils.text.ILangEntry;
 import moze_intel.projecte.utils.text.PELang;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.capabilities.Capabilities.ItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
@@ -75,10 +75,10 @@ public final class EMCHelper {
 		if (player.isCreative() || minFuel == 0) {
 			return minFuel;
 		}
-		IItemHandler curios = player.getCapability(IntegrationHelper.CURIO_ITEM_HANDLER);
+		var curios = IntegrationHelper.getEquippedCurios(player);
 		if (curios != null) {
 			for (int i = 0, slots = curios.getSlots(); i < slots; i++) {
-				long actualExtracted = tryExtract(curios.getStackInSlot(i), minFuel);
+				long actualExtracted = tryExtract(curios, i, minFuel);
 				if (actualExtracted > 0) {
 					player.containerMenu.broadcastChanges();
 					return actualExtracted;
@@ -87,7 +87,7 @@ public final class EMCHelper {
 		}
 
 		//Note: The implementation of this will iterate in the order: Main inventory, Armor, Offhand
-		IItemHandler inv = player.getCapability(ItemHandler.ENTITY);
+		var inv = player.isAlive() ? new net.neoforged.neoforge.items.wrapper.PlayerInvWrapper(player.getInventory()) : null;
 		if (inv != null) {
 			//Ensure that we have an item handler capability, because if for example the player is dead we will not
 			Int2IntMap map = new Int2IntOpenHashMap();
@@ -98,7 +98,7 @@ public final class EMCHelper {
 				if (stack.isEmpty()) {
 					continue;
 				}
-				long actualExtracted = tryExtract(stack, minFuel);
+				long actualExtracted = tryExtract(inv, i, minFuel);
 				if (actualExtracted > 0) { //Prioritize extracting from emc storage items
 					player.containerMenu.broadcastChanges();
 					return actualExtracted;
@@ -127,12 +127,16 @@ public final class EMCHelper {
 		return -1;
 	}
 
-	private static long tryExtract(@NotNull ItemStack stack, long minFuel) {
+	private static long tryExtract(net.neoforged.neoforge.items.IItemHandlerModifiable inventory, int slot, long minFuel) {
+		// ResourceHandler views return detached stacks. Persist component changes explicitly.
+		ItemStack stack = inventory.getStackInSlot(slot).copy();
 		IItemEmcHolder emcHolder = stack.getCapability(PECapabilities.EMC_HOLDER_ITEM_CAPABILITY);
 		if (emcHolder != null) {
 			long simulatedExtraction = emcHolder.extractEmc(stack, minFuel, EmcAction.SIMULATE);
 			if (simulatedExtraction >= minFuel) {
-				return emcHolder.extractEmc(stack, simulatedExtraction, EmcAction.EXECUTE);
+				long extracted = emcHolder.extractEmc(stack, simulatedExtraction, EmcAction.EXECUTE);
+				inventory.setStackInSlot(slot, stack);
+				return extracted;
 			}
 		}
 		return 0;

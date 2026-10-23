@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "projecte:volcanite_amulet"
-    },
-    {
-      "item": "minecraft:bucket"
-    },
-    {
-      "tag": "c:dusts/redstone"
-    }
+    "projecte:volcanite_amulet",
+    "minecraft:bucket",
+    "#c:dusts/redstone"
   ],
   "result": {
     "count": 1,

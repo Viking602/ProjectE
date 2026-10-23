@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "projecte:arcana_ring"
-    },
-    {
-      "item": "minecraft:dirt"
-    }
+    "projecte:arcana_ring",
+    "minecraft:dirt"
   ],
   "result": {
     "count": 1,

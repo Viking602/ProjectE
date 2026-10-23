@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "D": {
-      "item": "projecte:medium_covalence_dust"
-    },
-    "S": {
-      "item": "projecte:divining_rod_1"
-    }
+    "D": "projecte:medium_covalence_dust",
+    "S": "projecte:divining_rod_1"
   },
   "pattern": [
     "DDD",

@@ -45,10 +45,10 @@ public class ToolTipEvent {
 		}
 
 		if (ProjectEConfig.client.tagToolTips.get()) {
-			current.getTags().forEach(tag -> tooltip.add(Component.literal("#" + tag.location())));
+			current.typeHolder().tags().forEach(tag -> tooltip.add(Component.literal("#" + tag.location())));
 		}
 
-		if (ProjectEConfig.client.emcToolTips.get() && (!ProjectEConfig.client.shiftEmcToolTips.get() || Screen.hasShiftDown())) {
+		if (ProjectEConfig.client.emcToolTips.get() && (!ProjectEConfig.client.shiftEmcToolTips.get() || moze_intel.projecte.utils.ClientKeyHelper.hasShiftDown())) {
 			long value = IEMCProxy.INSTANCE.getValue(current);
 			if (value > 0) {
 				tooltip.add(EMCHelper.getEmcTextComponent(value, 1));
@@ -56,7 +56,7 @@ public class ToolTipEvent {
 					tooltip.add(EMCHelper.getEmcTextComponent(value, current.getCount()));
 				}
 				Player player = event.getEntity();
-				if (player != null && (!ProjectEConfig.client.shiftLearnedToolTips.get() || Screen.hasShiftDown())) {
+				if (player != null && (!ProjectEConfig.client.shiftLearnedToolTips.get() || moze_intel.projecte.utils.ClientKeyHelper.hasShiftDown())) {
 					IKnowledgeProvider knowledgeProvider = player.getCapability(PECapabilities.KNOWLEDGE_CAPABILITY);
 					if (knowledgeProvider != null && knowledgeProvider.hasKnowledge(current)) {
 						tooltip.add(PELang.EMC_HAS_KNOWLEDGE.translateColored(ChatFormatting.YELLOW));

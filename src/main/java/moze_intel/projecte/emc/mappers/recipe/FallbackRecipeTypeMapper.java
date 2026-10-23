@@ -60,7 +60,7 @@ public class FallbackRecipeTypeMapper extends BaseRecipeTypeMapper {
 			//If the extension of upgrade recipe doesn't override getIngredients (just like vanilla doesn't)
 			// grab the values from the recipe's object itself
 			if (recipe instanceof SmithingTransformRecipe transformRecipe) {
-				return List.of(transformRecipe.base, transformRecipe.addition, transformRecipe.template);
+				return transformRecipe.placementInfo().ingredients();
 			} else if (recipe instanceof SmithingTrimRecipe trimRecipe) {
 				return List.of(trimRecipe.base, trimRecipe.addition, trimRecipe.template);
 			}

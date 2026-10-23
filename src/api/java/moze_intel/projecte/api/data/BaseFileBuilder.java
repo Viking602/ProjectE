@@ -2,11 +2,11 @@ package moze_intel.projecte.api.data;
 
 import java.util.Objects;
 import javax.annotation.ParametersAreNonnullByDefault;
-import net.minecraft.MethodsReturnNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
 import org.jetbrains.annotations.Nullable;
 
 @ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NullMarked
 class BaseFileBuilder<BUILDER extends BaseFileBuilder<BUILDER>> {
 
 	@Nullable

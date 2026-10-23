@@ -2,15 +2,9 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "O": {
-      "tag": "c:obsidians/normal"
-    },
-    "P": {
-      "item": "projecte:philosophers_stone"
-    },
-    "S": {
-      "tag": "c:stones"
-    }
+    "O": "#c:obsidians/normal",
+    "P": "projecte:philosophers_stone",
+    "S": "#c:stones"
   },
   "pattern": [
     "OSO",

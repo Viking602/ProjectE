@@ -18,14 +18,14 @@ public class RecipeShapelessKleinStar extends WrappedShapelessRecipe {
 
 	@NotNull
 	@Override
-	public RecipeSerializer<?> getSerializer() {
+	public RecipeSerializer<RecipeShapelessKleinStar> getSerializer() {
 		return PERecipeSerializers.KLEIN.get();
 	}
 
 	@NotNull
 	@Override
-	public ItemStack assemble(@NotNull CraftingInput inv, @NotNull HolderLookup.Provider registryAccess) {
-		ItemStack result = getInternal().assemble(inv, registryAccess);
+	public ItemStack assemble(@NotNull CraftingInput inv) {
+		ItemStack result = getInternal().assemble(inv);
 		if (result.getItem() instanceof KleinStar resultingStar) {
 			long maxEmc = resultingStar.getMaximumEmc(result);
 			long storedEMC = 0;

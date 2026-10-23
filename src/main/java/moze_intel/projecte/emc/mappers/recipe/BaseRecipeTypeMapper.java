@@ -18,7 +18,7 @@ import moze_intel.projecte.utils.Constants;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -50,7 +50,7 @@ public abstract class BaseRecipeTypeMapper implements IRecipeTypeMapper {
 			//Skip handling of any "special" recipes as they might have issues if we try to handle them
 			return false;
 		}
-		ItemStack recipeOutput = recipe.getResultItem(registryAccess);
+		ItemStack recipeOutput = moze_intel.projecte.utils.RecipeHelper.result(recipe, registryAccess);
 		if (recipeOutput.isEmpty()) {
 			//If there is no output (for example a special recipe), don't mark it that we handled it
 			return false;
@@ -61,7 +61,7 @@ public abstract class BaseRecipeTypeMapper implements IRecipeTypeMapper {
 			// mapper would fail as well due to it being an invalid recipe
 			return true;
 		}
-		ResourceLocation recipeID = recipeHolder.id();
+		Identifier recipeID = recipeHolder.id().identifier();
 		Object2IntMap<NormalizedSimpleStack> ingredientMap = new Object2IntOpenHashMap<>();
 		for (Ingredient recipeItem : ingredientsChecked) {
 			if (recipeItem.isEmpty()) {
@@ -149,13 +149,13 @@ public abstract class BaseRecipeTypeMapper implements IRecipeTypeMapper {
 		return stack.getItem() == Items.BARRIER && stack.getHoverName() instanceof MutableComponent hoverName && hoverName.getString().startsWith("Empty Tag: ");
 	}
 
-	private ItemStack[] getMatchingStacks(Ingredient ingredient, ResourceLocation recipeID) {
+	private ItemStack[] getMatchingStacks(Ingredient ingredient, Identifier recipeID) {
 		try {
-			return ingredient.getItems();
+			return moze_intel.projecte.utils.RecipeHelper.stacks(ingredient);
 		} catch (Exception e) {
 			ICustomIngredient customIngredient = ingredient.getCustomIngredient();
 			if (customIngredient != null) {//Should basically always be the case
-				ResourceLocation name = NeoForgeRegistries.INGREDIENT_TYPES.getKey(customIngredient.getType());
+				Identifier name = NeoForgeRegistries.INGREDIENT_TYPES.getKey(customIngredient.getType());
 				if (name == null) {
 					PECore.LOGGER.error(LogUtils.FATAL_MARKER, "Error mapping recipe {}. Ingredient of type: {} crashed when getting the matching stacks. "
 															   + "Please report this to the ingredient's creator.", recipeID, customIngredient.getClass(), e);
@@ -173,20 +173,20 @@ public abstract class BaseRecipeTypeMapper implements IRecipeTypeMapper {
 	/**
 	 * Returns true if it failed and is invalid
 	 */
-	private boolean addIngredient(Object2IntMap<NormalizedSimpleStack> ingredientMap, ItemStack stack, ResourceLocation recipeID) {
+	private boolean addIngredient(Object2IntMap<NormalizedSimpleStack> ingredientMap, ItemStack stack, Identifier recipeID) {
 		stack = stack.copy();
 		Item item = stack.getItem();
 		boolean hasContainerItem = false;
 		try {
 			//Note: We include the hasContainerItem check in the try catch, as if a mod is handling tags incorrectly
 			// there is a chance their hasContainerItem is checking something about tags, and
-			hasContainerItem = item.hasCraftingRemainingItem(stack);
+			hasContainerItem = stack.getCraftingRemainder() != null;
 			if (hasContainerItem) {
 				//If this item has a container for the stack, we remove the cost of the container itself
-				ingredientMap.mergeInt(NSSItem.createItem(item.getCraftingRemainingItem(stack)), -1, Constants.INT_SUM);
+				ingredientMap.mergeInt(NSSItem.createItem(stack.getCraftingRemainder().create()), -1, Constants.INT_SUM);
 			}
 		} catch (Exception e) {
-			ResourceLocation itemName = BuiltInRegistries.ITEM.getKey(item);
+			Identifier itemName = BuiltInRegistries.ITEM.getKey(item);
 			if (hasContainerItem) {
 				PECore.LOGGER.error(LogUtils.FATAL_MARKER, "Error mapping recipe {}. Item: {} reported that it has a container item, but errors when trying to get "
 														   + "the container item based on the stack in the recipe. Please report this to {}.", recipeID, itemName,
@@ -208,7 +208,7 @@ public abstract class BaseRecipeTypeMapper implements IRecipeTypeMapper {
 		try {
 			return getIngredients(recipeHolder.value());
 		} catch (Exception e) {
-			ResourceLocation recipeID = recipeHolder.id();
+			Identifier recipeID = recipeHolder.id().identifier();
 			PECore.LOGGER.error(LogUtils.FATAL_MARKER, "Error mapping recipe {}. Failed to get ingredients. Please report this to {}.", recipeID, recipeID.getNamespace(), e);
 		}
 		return null;
@@ -216,6 +216,6 @@ public abstract class BaseRecipeTypeMapper implements IRecipeTypeMapper {
 
 	//Allow overwriting the ingredients list because Smithing recipes don't override it themselves
 	protected Collection<Ingredient> getIngredients(Recipe<?> recipe) {
-		return recipe.getIngredients();
+		return recipe.placementInfo().ingredients();
 	}
 }

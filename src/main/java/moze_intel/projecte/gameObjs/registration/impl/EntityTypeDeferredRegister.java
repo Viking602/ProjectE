@@ -19,7 +19,7 @@ public class EntityTypeDeferredRegister extends PEDeferredRegister<EntityType<?>
 
 	public <ENTITY extends Entity> EntityTypeRegistryObject<ENTITY> registerBuilder(String name, Supplier<EntityType.Builder<ENTITY>> builder,
 			UnaryOperator<EntityType.Builder<ENTITY>> modifier) {
-		return (EntityTypeRegistryObject<ENTITY>) register(name, rl -> modifier.apply(builder.get()).build(rl.getPath()));
+		return (EntityTypeRegistryObject<ENTITY>) register(name, rl -> modifier.apply(builder.get()).build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, rl)));
 	}
 
 	public <ENTITY extends Entity> EntityTypeRegistryObject<ENTITY> registerMisc(String name, EntityType.EntityFactory<ENTITY> factory,

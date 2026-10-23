@@ -26,7 +26,7 @@ import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.items.wrapper.CombinedInvWrapper;
+import moze_intel.projecte.utils.CombinedInvWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -173,18 +173,18 @@ public class RelayMK1BlockEntity extends EmcBlockEntity implements MenuProvider,
 	}
 
 	@Override
-	public void loadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		input.deserializeNBT(registries, tag.getCompound("input"));
-		output.deserializeNBT(registries, tag.getCompound("output"));
-		bonusEMC = tag.getDouble("bonus_emc");
+	public void loadAdditional(@NotNull net.minecraft.world.level.storage.ValueInput tag) {
+		super.loadAdditional(tag);
+		input.deserialize(tag.childOrEmpty("input"));
+		output.deserialize(tag.childOrEmpty("output"));
+		bonusEMC = tag.getDoubleOr("bonus_emc", 0D);
 	}
 
 	@Override
-	protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
-		tag.put("input", input.serializeNBT(registries));
-		tag.put("output", output.serializeNBT(registries));
+	protected void saveAdditional(@NotNull net.minecraft.world.level.storage.ValueOutput tag) {
+		super.saveAdditional(tag);
+		input.serialize(tag.child("input"));
+		output.serialize(tag.child("output"));
 		tag.putDouble("bonus_emc", bonusEMC);
 	}
 

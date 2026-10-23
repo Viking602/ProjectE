@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "projecte:aeternalis_fuel_block"
-    }
+    "projecte:aeternalis_fuel_block"
   ],
   "result": {
     "count": 9,

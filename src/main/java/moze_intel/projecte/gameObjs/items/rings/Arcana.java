@@ -42,7 +42,6 @@ import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -50,7 +49,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.entity.projectile.Snowball;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -64,7 +63,7 @@ import net.neoforged.neoforge.common.ItemAbility;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import org.jetbrains.annotations.NotNull;
 
-public class Arcana extends ItemPE implements IItemMode<ArcanaMode>, IFireProtector, IExtraFunction, IProjectileShooter, ICapabilityAware, IExposesCurioAttributes {
+public class Arcana extends ItemPE implements IItemMode<ArcanaMode>, IFireProtector, IExtraFunction, IProjectileShooter, ICapabilityAware, IExposesCurioAttributes, moze_intel.projecte.gameObjs.items.IHasConditionalAttributes {
 
 	private static final AttributeModifier FLIGHT = new AttributeModifier(PECore.rl("arcana_flight"), 1, Operation.ADD_VALUE);
 	private final Supplier<ItemAttributeModifiers> defaultModifiers;
@@ -79,27 +78,20 @@ public class Arcana extends ItemPE implements IItemMode<ArcanaMode>, IFireProtec
 				.build());
 	}
 
-	@NotNull
-	@Override
-	@Deprecated
-	public ItemAttributeModifiers getDefaultAttributeModifiers() {
-		return this.defaultModifiers.get();
-	}
+    @Override public void adjustAttributes(net.neoforged.neoforge.event.ItemAttributeModifierEvent event) {
+        event.addModifier(NeoForgeMod.CREATIVE_FLIGHT, FLIGHT, EquipmentSlotGroup.ANY);
+    }
 
 	@Override
 	public void addAttributes(Multimap<Holder<Attribute>, AttributeModifier> attributes) {
 		attributes.put(NeoForgeMod.CREATIVE_FLIGHT, FLIGHT);
 	}
 
-	@Override
-	public boolean hasCraftingRemainingItem(@NotNull ItemStack stack) {
-		return true;
-	}
 
 	@NotNull
 	@Override
-	public ItemStack getCraftingRemainingItem(ItemStack stack) {
-		return stack.copy();
+	public net.minecraft.world.item.ItemStackTemplate getCraftingRemainder(net.minecraft.world.item.ItemInstance stack) {
+		return net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(moze_intel.projecte.utils.ItemHelper.asStack(stack));
 	}
 
 	private void tick(ItemStack stack, Level level, ServerPlayer player) {
@@ -114,31 +106,32 @@ public class Arcana extends ItemPE implements IItemMode<ArcanaMode>, IFireProtec
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slot, boolean isHeld) {
-		super.inventoryTick(stack, level, entity, slot, isHeld);
-		if (!level.isClientSide && hotBarOrOffHand(slot) && entity instanceof ServerPlayer player) {
+	public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.server.level.ServerLevel level, @NotNull Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+		super.inventoryTick(stack, level, entity, slot);
+		boolean isHeld = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+		if (!level.isClientSide() && hotBarOrOffHand(slot, entity, stack) && entity instanceof ServerPlayer player) {
 			tick(stack, level, player);
 		}
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, @NotNull List<Component> tooltip, @NotNull TooltipFlag flags) {
-		super.appendHoverText(stack, context, tooltip, flags);
+	public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context, net.minecraft.world.item.component.TooltipDisplay display, java.util.function.Consumer<Component> tooltip, @NotNull TooltipFlag flags) {
+		super.appendHoverText(stack, context, display, tooltip, flags);
 		if (stack.getOrDefault(PEDataComponentTypes.ACTIVE, false)) {
-			tooltip.add(getToolTip(stack));
+			tooltip.accept(getToolTip(stack));
 		} else {
-			tooltip.add(PELang.TOOLTIP_ARCANA_INACTIVE.translateColored(ChatFormatting.RED));
+			tooltip.accept(PELang.TOOLTIP_ARCANA_INACTIVE.translateColored(ChatFormatting.RED));
 		}
 	}
 
 	@NotNull
 	@Override
-	public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
-		if (!level.isClientSide) {
+	public InteractionResult use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+		if (!level.isClientSide()) {
 			ItemStack stack = player.getItemInHand(hand);
 			stack.update(PEDataComponentTypes.ACTIVE, false, active -> !active);
 		}
-		return InteractionResultHolder.success(player.getItemInHand(hand));
+		return InteractionResult.SUCCESS.heldItemTransformedTo(player.getItemInHand(hand));
 	}
 
 	@NotNull
@@ -157,7 +150,7 @@ public class Arcana extends ItemPE implements IItemMode<ArcanaMode>, IFireProtec
 	public boolean doExtraFunction(@NotNull Player player, @NotNull ItemStack stack, InteractionHand hand) {
 		//GIANT FIRE ROW OF DEATH
 		Level level = player.level();
-		if (level.isClientSide) {
+		if (level.isClientSide()) {
 			return true;
 		}
 		if (getMode(stack) == ArcanaMode.IGNITION) {
@@ -181,14 +174,14 @@ public class Arcana extends ItemPE implements IItemMode<ArcanaMode>, IFireProtec
 	@Override
 	public boolean shootProjectile(@NotNull Player player, @NotNull ItemStack stack, InteractionHand hand) {
 		Level level = player.level();
-		if (level.isClientSide) {
+		if (level.isClientSide()) {
 			return false;
 		}
 		SoundEvent sound = null;
 		Projectile projectile = switch (getMode(stack)) {
 			case ZERO -> {
 				sound = SoundEvents.SNOWBALL_THROW;
-				yield new Snowball(level, player);
+				yield new Snowball(level, player, new ItemStack(net.minecraft.world.item.Items.SNOWBALL));
 			}
 			case IGNITION -> {
 				sound = PESoundEvents.POWER.get();
@@ -209,7 +202,8 @@ public class Arcana extends ItemPE implements IItemMode<ArcanaMode>, IFireProtec
 	}
 
 	@Override
-	public boolean canPerformAction(@NotNull ItemStack stack, @NotNull ItemAbility action) {
+	public boolean canPerformAction(@NotNull net.minecraft.world.item.ItemInstance instance, @NotNull ItemAbility action) {
+		ItemStack stack = moze_intel.projecte.utils.ItemHelper.asStack(instance);
 		if (action == ItemAbilities.FIRESTARTER_LIGHT && getMode(stack) == ArcanaMode.IGNITION) {
 			return true;
 		}

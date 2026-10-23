@@ -9,7 +9,7 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.armortrim.ArmorTrim;
+import net.minecraft.world.item.equipment.trim.ArmorTrim;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
@@ -34,22 +34,26 @@ public class ArmorTrimProcessor extends PersistentComponentProcessor<ArmorTrim> 
 	@Override
 	@Range(from = 0, to = Long.MAX_VALUE)
 	public long recalculateEMC(@NotNull ItemInfo info, @Range(from = 1, to = Long.MAX_VALUE) long currentEMC, @NotNull ArmorTrim trim) throws ArithmeticException {
-		Holder<Item> material = trim.material().value().ingredient();
-		long materialEmc = IEMCProxy.INSTANCE.getValue(material);
-		if (materialEmc == 0) {
-			//The material for the trim doesn't have an EMC value, so there is no valid EMC value for the applied trim as a whole
-			return 0;
-		}
-		Holder<Item> template = trim.pattern().value().templateItem();
-		long templateEmc = IEMCProxy.INSTANCE.getValue(template);
-		if (templateEmc == 0) {
-			//The template for the trim doesn't have an EMC value, and given the template is consumed: there is no valid EMC value for the applied trim as a whole
-			return 0;
-		}
-		return Math.addExact(
-				Math.addExact(currentEMC, materialEmc),
-				templateEmc
-		);
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return 0;
+        long minimum = Long.MAX_VALUE;
+        var base = info.createStack();
+        for (var holder : server.getRecipeManager().recipeMap().byType(net.minecraft.world.item.crafting.RecipeType.SMITHING)) {
+            if (holder.value() instanceof net.minecraft.world.item.crafting.SmithingTrimRecipe recipe
+                    && recipe.pattern.equals(trim.pattern()) && recipe.base.test(base)) {
+                long templateEmc = moze_intel.projecte.api.components.IComponentProcessorHelper.INSTANCE.getMinEmcFor(IEMCProxy.INSTANCE::getValue, recipe.template);
+                if (templateEmc == 0) continue;
+                long materialEmc = Long.MAX_VALUE;
+                for (var stack : moze_intel.projecte.utils.RecipeHelper.stacks(recipe.addition)) {
+                    if (trim.material().equals(stack.get(DataComponents.PROVIDES_TRIM_MATERIAL))) {
+                        long value = IEMCProxy.INSTANCE.getValue(stack);
+                        if (value > 0) materialEmc = Math.min(materialEmc, value);
+                    }
+                }
+                if (materialEmc != Long.MAX_VALUE) minimum = Math.min(minimum, Math.addExact(templateEmc, materialEmc));
+            }
+        }
+        return minimum == Long.MAX_VALUE ? 0 : Math.addExact(currentEMC, minimum);
 	}
 
 	@Override

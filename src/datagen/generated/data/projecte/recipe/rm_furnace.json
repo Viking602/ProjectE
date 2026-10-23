@@ -2,12 +2,8 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "F": {
-      "item": "projecte:dm_furnace"
-    },
-    "R": {
-      "item": "projecte:red_matter_block"
-    }
+    "F": "projecte:dm_furnace",
+    "R": "projecte:red_matter_block"
   },
   "pattern": [
     " R ",

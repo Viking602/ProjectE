@@ -1,0 +1,7 @@
+modLoader="javafml"
+loaderVersion="[11,)"
+license="MIT"
+[[mods]]
+modId="projecte_smoke"
+version="1"
+displayName="ProjectE isolated port verification"

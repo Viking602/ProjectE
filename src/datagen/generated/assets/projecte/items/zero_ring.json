@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "minecraft:range_dispatch",
+    "property": "projecte:active",
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "projecte:item/zero_ring"
+    },
+    "entries": [
+      {
+        "threshold": 1.0,
+        "model": {
+          "type": "minecraft:model",
+          "model": "projecte:item/zero_ring_on"
+        }
+      }
+    ]
+  }
+}

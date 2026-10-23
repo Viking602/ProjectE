@@ -1,63 +1,66 @@
 package moze_intel.projecte.rendering;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import moze_intel.projecte.gameObjs.block_entities.DMPedestalBlockEntity;
-import net.minecraft.SharedConstants;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.debug.DebugScreenEntries;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.ShapeRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.core.BlockPos;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
+import org.jetbrains.annotations.Nullable;
 
-public class PedestalRenderer implements BlockEntityRenderer<DMPedestalBlockEntity> {
-
-	private final BlockEntityRendererProvider.Context context;
-
-	public PedestalRenderer(BlockEntityRendererProvider.Context context) {
-		this.context = context;
-	}
-
-	@Override
-	public void render(@NotNull DMPedestalBlockEntity pedestal, float partialTick, @NotNull PoseStack matrix, @NotNull MultiBufferSource renderer, int light, int overlayLight) {
-		if (!pedestal.isRemoved() && pedestal.getLevel() != null) {
-			if (this.context.getEntityRenderer().shouldRenderHitBoxes()) {
-				matrix.pushPose();
-				BlockPos pos = pedestal.getBlockPos();
-				AABB aabb = pedestal.getEffectBounds().move(-pos.getX(), -pos.getY(), -pos.getZ());
-				VertexConsumer vertexBuilder = renderer.getBuffer(RenderType.lines());
-				LevelRenderer.renderLineBox(matrix, vertexBuilder, aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ,
-						1, 0, 1, 1, 1, 0, 1);
-				matrix.popPose();
-			}
-			ItemStack stack = pedestal.getInventory().getStackInSlot(0);
-			if (!stack.isEmpty()) {
-				matrix.pushPose();
-				matrix.translate(0.5, 0.7, 0.5);
-				long gameTime = pedestal.getLevel().getGameTime();
-				matrix.translate(0, Mth.sin((gameTime + partialTick) / 10.0F) * 0.1 + 0.1, 0);
-				matrix.scale(0.75F, 0.75F, 0.75F);
-				float angle = (gameTime + partialTick) / (float) SharedConstants.TICKS_PER_SECOND;
-				matrix.mulPose(Axis.YP.rotation(angle));
-				this.context.getItemRenderer().renderStatic(stack, ItemDisplayContext.GROUND, light, overlayLight, matrix, renderer, pedestal.getLevel(), (int) pedestal.getBlockPos().asLong());
-				matrix.popPose();
-			}
-		}
-	}
-
-	@NotNull
-	@Override
-	public AABB getRenderBoundingBox(@NotNull DMPedestalBlockEntity pedestal) {
-		if (this.context.getEntityRenderer().shouldRenderHitBoxes()) {
-			return pedestal.getEffectBounds();
-		}
-		return BlockEntityRenderer.super.getRenderBoundingBox(pedestal);
-	}
+public class PedestalRenderer implements BlockEntityRenderer<DMPedestalBlockEntity, PedestalRenderer.State> {
+    public static class State extends BlockEntityRenderState {
+        final ItemStackRenderState item = new ItemStackRenderState();
+        float time;
+        @Nullable AABB bounds;
+    }
+    private final ItemModelResolver items;
+    public PedestalRenderer(BlockEntityRendererProvider.Context context) { items = context.itemModelResolver(); }
+    private static boolean showBounds() { return Minecraft.getInstance().debugEntries.isCurrentlyEnabled(DebugScreenEntries.ENTITY_HITBOXES); }
+    @Override public State createRenderState() { return new State(); }
+    @Override
+    public void extractRenderState(DMPedestalBlockEntity pedestal, State state, float partialTick, Vec3 cameraPos,
+            @Nullable ModelFeatureRenderer.CrumblingOverlay overlay) {
+        BlockEntityRenderer.super.extractRenderState(pedestal, state, partialTick, cameraPos, overlay);
+        var pos = pedestal.getBlockPos();
+        state.bounds = showBounds() ? pedestal.getEffectBounds().move(-pos.getX(), -pos.getY(), -pos.getZ()) : null;
+        state.time = pedestal.getLevel() == null ? 0 : (pedestal.getLevel().getGameTime() % 100000L) + partialTick;
+        items.updateForTopItem(state.item, pedestal.getInventory().getStackInSlot(0), ItemDisplayContext.GROUND,
+                pedestal.getLevel(), null, (int) pos.asLong());
+    }
+    @Override
+    public void submit(State state, PoseStack pose, SubmitNodeCollector collector, CameraRenderState camera) {
+        if (state.bounds != null) {
+            var shape = Shapes.create(state.bounds);
+            // Capture an independent pose for the deferred render callback.
+            PoseStack linesPose = new PoseStack();
+            linesPose.mulPose(pose.last().pose());
+            collector.submitCustomGeometry(pose, RenderTypes.lines(), (matrix, buffer) ->
+                    ShapeRenderer.renderShape(linesPose, buffer, shape, 0, 0, 0, 0xFFFF00FF, 1));
+        }
+        pose.pushPose();
+        pose.translate(0.5, 0.8 + Mth.sin(state.time / 10) * 0.1, 0.5);
+        pose.scale(0.75F, 0.75F, 0.75F);
+        pose.mulPose(Axis.YP.rotation(state.time / 20));
+        state.item.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
+        pose.popPose();
+    }
+    @Override public AABB getRenderBoundingBox(DMPedestalBlockEntity pedestal) {
+        return showBounds() ? pedestal.getEffectBounds() : BlockEntityRenderer.super.getRenderBoundingBox(pedestal);
+    }
 }

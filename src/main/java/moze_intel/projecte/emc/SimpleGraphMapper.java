@@ -18,12 +18,18 @@ public class SimpleGraphMapper<T, V extends Comparable<V>, A extends IValueArith
 	private static final boolean OVERWRITE_FIXED_VALUES = false;
 
 	private final V ZERO;
+	private final boolean fixedValuesAreUpperBounds;
 
 	private static boolean logFoundExploits = true;
 
 	public SimpleGraphMapper(A arithmetic) {
+		this(arithmetic, false);
+	}
+
+	public SimpleGraphMapper(A arithmetic, boolean fixedValuesAreUpperBounds) {
 		super(arithmetic);
 		ZERO = arithmetic.getZero();
+		this.fixedValuesAreUpperBounds = fixedValuesAreUpperBounds;
 	}
 
 	static void setLogFoundExploits(boolean log) {
@@ -51,7 +57,8 @@ public class SimpleGraphMapper<T, V extends Comparable<V>, A extends IValueArith
 			return true;
 		}
 		V valueBeforeInherit = fixValueBeforeInherit.get(something);
-		return valueBeforeInherit == null || valueBeforeInherit.compareTo(value) == 0;
+		return valueBeforeInherit == null || valueBeforeInherit.compareTo(value) == 0
+				|| fixedValuesAreUpperBounds && arithmetic.isGreaterThanZero(value) && valueBeforeInherit.compareTo(value) > 0;
 	}
 
 	private boolean canOverrideZero(T something) {
@@ -101,7 +108,7 @@ public class SimpleGraphMapper<T, V extends Comparable<V>, A extends IValueArith
 						}
 						for (Conversion conversion : usesFor) {
 							Conversion oldConversion = overwriteConversion.get(conversion.output);
-							if (oldConversion != null && oldConversion != conversion) {
+							if (!fixedValuesAreUpperBounds && oldConversion != null && oldConversion != conversion) {
 								//There is a "SetValue-Conversion" for this item, and it's not this one, so we skip it.
 								continue;
 							}
@@ -158,7 +165,7 @@ public class SimpleGraphMapper<T, V extends Comparable<V>, A extends IValueArith
 					//This is a Loophole. We remove it by setting the value to 0.
 					if (arithmetic.isGreaterThanZero(ingredientValue) && isLessThan(resultValueConversion, resultValueActual)) {
 						Conversion oldConversion = overwriteConversion.get(conversion.output);
-						if (oldConversion != null && oldConversion != conversion) {
+						if (!fixedValuesAreUpperBounds && oldConversion != null && oldConversion != conversion) {
 							if (logFoundExploits) {
 								PECore.LOGGER.warn("EMC Exploit: \"{}\" ingredient cost: {} value of result: {} setValueFromConversion: {}", conversion,
 										ingredientValue, valueOrZero(resultValueActual), oldConversion);

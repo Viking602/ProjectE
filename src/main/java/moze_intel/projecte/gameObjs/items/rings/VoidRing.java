@@ -33,9 +33,10 @@ public class VoidRing extends GemEternalDensity implements IPedestalItem, IExtra
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slot, boolean isHeld) {
-		super.inventoryTick(stack, level, entity, slot, isHeld);
-		PEItems.BLACK_HOLE_BAND.get().inventoryTick(stack, level, entity, slot, isHeld);
+	public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.server.level.ServerLevel level, @NotNull Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+		super.inventoryTick(stack, level, entity, slot);
+		boolean isHeld = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+		PEItems.BLACK_HOLE_BAND.get().inventoryTick(stack, level, entity, slot);
 	}
 
 	@Override
@@ -53,7 +54,7 @@ public class VoidRing extends GemEternalDensity implements IPedestalItem, IExtra
 	@Override
 	public boolean doExtraFunction(@NotNull Player player, @NotNull ItemStack stack, InteractionHand hand) {
 		ItemCooldowns cooldowns = player.getCooldowns();
-		if (cooldowns.isOnCooldown(this)) {
+		if (cooldowns.isOnCooldown(new ItemStack(this))) {
 			return false;
 		}
 		BlockHitResult lookingAt = PlayerHelper.getBlockLookingAt(player, 64);
@@ -63,7 +64,7 @@ public class VoidRing extends GemEternalDensity implements IPedestalItem, IExtra
 		} else {
 			c = lookingAt.getBlockPos();
 		}
-		EntityTeleportEvent event = new EntityTeleportEvent(player, c.getX(), c.getY(), c.getZ());
+		EntityTeleportEvent event = new EntityTeleportEvent(player, (net.minecraft.server.level.ServerLevel) player.level(), c.getX(), c.getY(), c.getZ());
 		if (!NeoForge.EVENT_BUS.post(event).isCanceled()) {
 			if (player.isPassenger()) {
 				player.stopRiding();
@@ -71,7 +72,7 @@ public class VoidRing extends GemEternalDensity implements IPedestalItem, IExtra
 			player.resetFallDistance();
 			player.teleportTo(event.getTargetX(), event.getTargetY(), event.getTargetZ());
 			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 1, 1);
-			cooldowns.addCooldown(this, SharedConstants.TICKS_PER_SECOND / 2);
+			cooldowns.addCooldown(new ItemStack(this), SharedConstants.TICKS_PER_SECOND / 2);
 			return true;
 		}
 		return false;

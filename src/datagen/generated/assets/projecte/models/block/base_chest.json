@@ -205,5 +205,8 @@
         1
       ]
     }
-  ]
+  ],
+  "textures": {
+    "particle": "#chest"
+  }
 }

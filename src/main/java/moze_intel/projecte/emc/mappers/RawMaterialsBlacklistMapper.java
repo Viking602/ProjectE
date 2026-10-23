@@ -25,7 +25,7 @@ public class RawMaterialsBlacklistMapper implements IEMCMapper<NormalizedSimpleS
 	@Override
 	public void addMappings(IMappingCollector<NormalizedSimpleStack, Long> mapper, ReloadableServerResources serverResources,
 			RegistryAccess registryAccess, ResourceManager resourceManager) {
-		Optional<Named<Item>> tag = BuiltInRegistries.ITEM.getTag(Tags.Items.RAW_MATERIALS);
+		Optional<Named<Item>> tag = BuiltInRegistries.ITEM.get(Tags.Items.RAW_MATERIALS);
 		if (tag.isPresent()) {
 			for (Holder<Item> holder : tag.get()) {
 				NSSItem rawOre = NSSItem.createItem(holder);

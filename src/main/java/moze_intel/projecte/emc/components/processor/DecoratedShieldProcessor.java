@@ -47,7 +47,7 @@ public class DecoratedShieldProcessor implements IDataComponentProcessor {
 		if (info.getItem().is(Tags.Items.TOOLS_SHIELD)) {
 			DyeColor baseColor = info.getOrNull(DataComponents.BASE_COLOR);
 			if (baseColor != null) {
-				ItemStack banner = new ItemStack(BannerBlock.byColor(baseColor));
+				ItemStack banner = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(net.minecraft.resources.Identifier.withDefaultNamespace(baseColor.getName() + "_banner")));
 				BannerPatternLayers patternLayers = info.getOrNull(DataComponents.BANNER_PATTERNS);
 				if (patternLayers != null && !patternLayers.equals(BannerPatternLayers.EMPTY)) {
 					//If there is any pattern stored, set it so that we can get the value of the banner when it has that pattern stored

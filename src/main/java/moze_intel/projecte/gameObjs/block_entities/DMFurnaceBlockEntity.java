@@ -23,7 +23,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -47,13 +47,13 @@ import net.minecraft.world.level.block.entity.Hopper;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
-import net.neoforged.neoforge.capabilities.Capabilities.ItemHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.ICapabilityProvider;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
-import net.neoforged.neoforge.items.wrapper.CombinedInvWrapper;
+import moze_intel.projecte.utils.CombinedInvWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -105,13 +105,13 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 
 	protected final int ticksBeforeSmelt;
 	private final int efficiencyBonus;
-	private final Object2IntOpenHashMap<ResourceLocation> recipesUsed = new Object2IntOpenHashMap<>();
+	private final Object2IntOpenHashMap<Identifier> recipesUsed = new Object2IntOpenHashMap<>();
 	private final RecipeManager.CachedCheck<SingleRecipeInput, SmeltingRecipe> quickCheck;
 
 	@Nullable
-	private BlockCapabilityCache<IItemHandler, @Nullable Direction> pullTarget;
+	private BlockCapabilityCache<net.neoforged.neoforge.transfer.ResourceHandler<net.neoforged.neoforge.transfer.item.ItemResource>, @Nullable Direction> pullTarget;
 	@Nullable
-	private BlockCapabilityCache<IItemHandler, @Nullable Direction> pushTarget;
+	private BlockCapabilityCache<net.neoforged.neoforge.transfer.ResourceHandler<net.neoforged.neoforge.transfer.item.ItemResource>, @Nullable Direction> pushTarget;
 
 	public int litTime;
 	public int litDuration;
@@ -151,8 +151,8 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 	public void setLevel(@NotNull Level level) {
 		super.setLevel(level);
 		if (level instanceof ServerLevel serverLevel) {
-			pullTarget = BlockCapabilityCache.create(ItemHandler.BLOCK, serverLevel, worldPosition.above(), Direction.DOWN);
-			pushTarget = BlockCapabilityCache.create(ItemHandler.BLOCK, serverLevel, worldPosition.below(), Direction.UP);
+			pullTarget = BlockCapabilityCache.create(Capabilities.Item.BLOCK, serverLevel, worldPosition.above(), Direction.DOWN);
+			pushTarget = BlockCapabilityCache.create(Capabilities.Item.BLOCK, serverLevel, worldPosition.below(), Direction.UP);
 		}
 	}
 
@@ -190,7 +190,8 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 			return 0;
 		}
 		//Adjust by one so that it can look like it is actually reaching the end of the bar
-		int progress = isLit() && canSmelt(getSmeltingRecipe(getItemToSmelt())) ? cookingProgress + 1 : cookingProgress;
+		int progress = isLit() && (level != null && level.isClientSide() ? cookingProgress > 0 : canSmelt(getSmeltingRecipe(getItemToSmelt())))
+				? cookingProgress + 1 : cookingProgress;
 		return Mth.clamp(progress / (float) cookingTotalTime, 0, 1);
 	}
 
@@ -264,7 +265,7 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 					fuelItem.shrink(1);
 					furnace.fuelInv.onContentsChanged(0);
 					if (fuelItem.isEmpty()) {
-						furnace.fuelInv.setStackInSlot(0, copy.getItem().getCraftingRemainingItem(copy));
+						furnace.fuelInv.setStackInSlot(0, moze_intel.projecte.utils.ItemHelper.craftingRemainder(copy));
 					}
 					furnace.markDirty(level, pos, false);
 				}
@@ -304,7 +305,7 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 		if (pullTarget == null || isHopper(level, pos.above())) {
 			return;
 		}
-		IItemHandler handler = pullTarget.getCapability();
+		IItemHandler handler = moze_intel.projecte.utils.ItemTransferAdapter.legacy(pullTarget.getCapability());
 		if (handler != null) {
 			for (int i = 0, slots = handler.getSlots(); i < slots; i++) {
 				ItemStack extractTest = handler.extractItem(i, Integer.MAX_VALUE, true);
@@ -320,7 +321,7 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 		if (pushTarget == null || outputInventory.isEmpty() || isHopper(level, pos.below())) {
 			return;
 		}
-		IItemHandler targetInv = pushTarget.getCapability();
+		IItemHandler targetInv = moze_intel.projecte.utils.ItemTransferAdapter.legacy(pushTarget.getCapability());
 		if (targetInv != null) {
 			for (int i = 0, slots = outputInventory.getSlots(); i < slots; i++) {
 				ItemStack extractTest = outputInventory.extractItem(i, Integer.MAX_VALUE, true);
@@ -346,26 +347,29 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 	}
 
 	private RecipeResult getSmeltingRecipe(@Nullable Level level, ItemStack input) {
-		if (level == null || input.isEmpty()) {
+		if (!(level instanceof ServerLevel serverLevel) || input.isEmpty()) {
 			return RecipeResult.EMPTY;
 		}
 		//Note: We copy the input and fuel so that if anyone attempts to mutate the input from assemble then there is no side effects that occur
 		SingleRecipeInput recipeInput = new SingleRecipeInput(input.copyWithCount(1));
-		Optional<RecipeHolder<SmeltingRecipe>> optionalRecipe = quickCheck.getRecipeFor(recipeInput, level);
+		Optional<RecipeHolder<SmeltingRecipe>> optionalRecipe = quickCheck.getRecipeFor(recipeInput, serverLevel);
 		if (optionalRecipe.isPresent()) {
 			RecipeHolder<SmeltingRecipe> recipeHolder = optionalRecipe.get();
-			return new RecipeResult(recipeHolder, recipeHolder.value().assemble(recipeInput, level.registryAccess()));
+			return new RecipeResult(recipeHolder, recipeHolder.value().assemble(recipeInput));
 		}
 		return RecipeResult.EMPTY;
 	}
 
 	public boolean hasSmeltingResult(ItemStack input) {
+		if (level != null && level.isClientSide()) {
+			return level.recipeAccess().propertySet(net.minecraft.world.item.crafting.RecipePropertySet.FURNACE_INPUT).test(input);
+		}
 		return getSmeltingRecipe(input).hasResult();
 	}
 
 	private void smeltItem(@NotNull Level level, @NotNull RecipeResult recipeResult) {
 		ItemStack toSmelt = getItemToSmelt();
-		ItemStack smeltResult = recipeResult.scaledResult(level.random, getDoubleChance(toSmelt));
+		ItemStack smeltResult = recipeResult.scaledResult(level.getRandom(), getDoubleChance(toSmelt));
 		if (!smeltResult.isEmpty()) {//Double-check the result isn't somehow empty
 			ItemHandlerHelper.insertItemStacked(outputInventory, smeltResult, false);
 
@@ -399,14 +403,14 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 	}
 
 	private int getItemBurnTime(ItemStack stack) {
-		return stack.getBurnTime(RecipeType.SMELTING) * ticksBeforeSmelt / AbstractFurnaceBlockEntity.BURN_TIME_STANDARD * efficiencyBonus;
+		return stack.getBurnTime(RecipeType.SMELTING, level == null ? moze_intel.projecte.utils.RecipeHelper.fuelValues() : level.fuelValues()) * ticksBeforeSmelt / AbstractFurnaceBlockEntity.BURN_TIME_STANDARD * efficiencyBonus;
 	}
 
 	private int getTotalCookTime(RecipeResult recipeResult) {
 		if (recipeResult.recipeHolder() == null) {
 			return ticksBeforeSmelt;
 		}
-		int cookingTime = recipeResult.recipeHolder().value().getCookingTime();
+		int cookingTime = recipeResult.recipeHolder().value().cookingTime();
 		return Mth.ceil(ticksBeforeSmelt * cookingTime / (float) AbstractFurnaceBlockEntity.BURN_TIME_STANDARD);
 	}
 
@@ -419,45 +423,45 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 	}
 
 	@Override
-	public void loadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.loadAdditional(tag, registries);
-		litTime = tag.getInt("burn_time");
-		cookingProgress = tag.getInt("cook_time");
-		cookingTotalTime = tag.getInt("cook_time_total");
-		fuelInv.deserializeNBT(registries, tag.getCompound("fuel"));
-		inputInventory.deserializeNBT(registries, tag.getCompound("input"));
-		outputInventory.deserializeNBT(registries, tag.getCompound("output"));
+	public void loadAdditional(@NotNull net.minecraft.world.level.storage.ValueInput tag) {
+		super.loadAdditional(tag);
+		litTime = tag.getIntOr("burn_time", 0);
+		cookingProgress = tag.getIntOr("cook_time", 0);
+		cookingTotalTime = tag.getIntOr("cook_time_total", 0);
+		fuelInv.deserialize(tag.childOrEmpty("fuel"));
+		inputInventory.deserialize(tag.childOrEmpty("input"));
+		outputInventory.deserialize(tag.childOrEmpty("output"));
 		litDuration = getItemBurnTime(getFuelItem());
 		//[VanillaCopy] AbstractFurnaceBlockEntity
-		CompoundTag usedRecipes = tag.getCompound("recipes_used");
-		for (String recipeId : usedRecipes.getAllKeys()) {
-			this.recipesUsed.put(ResourceLocation.parse(recipeId), usedRecipes.getInt(recipeId));
+		CompoundTag usedRecipes = tag.read("recipes_used", CompoundTag.CODEC).orElseGet(CompoundTag::new);
+		for (String recipeId : usedRecipes.keySet()) {
+			this.recipesUsed.put(Identifier.parse(recipeId), usedRecipes.getIntOr(recipeId, 0));
 		}
 	}
 
 	@Override
-	protected void saveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries) {
-		super.saveAdditional(tag, registries);
+	protected void saveAdditional(@NotNull net.minecraft.world.level.storage.ValueOutput tag) {
+		super.saveAdditional(tag);
 		tag.putInt("burn_time", litTime);
 		tag.putInt("cook_time", cookingProgress);
 		tag.putInt("cook_time_total", this.cookingTotalTime);
-		tag.put("input", inputInventory.serializeNBT(registries));
-		tag.put("output", outputInventory.serializeNBT(registries));
-		tag.put("fuel", fuelInv.serializeNBT(registries));
+		inputInventory.serialize(tag.child("input"));
+		outputInventory.serialize(tag.child("output"));
+		fuelInv.serialize(tag.child("fuel"));
 		//[VanillaCopy] AbstractFurnaceBlockEntity
 		CompoundTag usedRecipes = new CompoundTag();
-		for (Iterator<Object2IntMap.Entry<ResourceLocation>> iterator = Object2IntMaps.fastIterator(recipesUsed); iterator.hasNext(); ) {
-			Object2IntMap.Entry<ResourceLocation> entry = iterator.next();
+		for (Iterator<Object2IntMap.Entry<Identifier>> iterator = Object2IntMaps.fastIterator(recipesUsed); iterator.hasNext(); ) {
+			Object2IntMap.Entry<Identifier> entry = iterator.next();
 			usedRecipes.putInt(entry.getKey().toString(), entry.getIntValue());
 		}
-		tag.put("recipes_used", usedRecipes);
+		tag.store("recipes_used", CompoundTag.CODEC, usedRecipes);
 	}
 
 	@Override
 	public void setRecipeUsed(@Nullable RecipeHolder<?> recipeHolder) {
 		//[VanillaCopy] AbstractFurnaceBlockEntity
 		if (recipeHolder != null) {
-			this.recipesUsed.addTo(recipeHolder.id(), 1);
+			this.recipesUsed.addTo(recipeHolder.id().identifier(), 1);
 		}
 	}
 
@@ -475,7 +479,7 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 
 	//[VanillaCopy] AbstractFurnaceBlockEntity
 	public void awardUsedRecipesAndPopExperience(ServerPlayer player) {
-		List<RecipeHolder<?>> recipes = getRecipesToAwardAndPopExperience(player.serverLevel(), player.position());
+		List<RecipeHolder<?>> recipes = getRecipesToAwardAndPopExperience(player.level(), player.position());
 		player.awardRecipes(recipes);
 
 		for (RecipeHolder<?> recipeholder : recipes) {
@@ -489,17 +493,17 @@ public class DMFurnaceBlockEntity extends EmcBlockEntity implements MenuProvider
 
 	//[VanillaCopy] AbstractFurnaceBlockEntity
 	public List<RecipeHolder<?>> getRecipesToAwardAndPopExperience(ServerLevel level, Vec3 popVec) {
-		RecipeManager recipeManager = level.getRecipeManager();
+		RecipeManager recipeManager = level.getServer().getRecipeManager();
 		List<RecipeHolder<?>> list = new ArrayList<>();
-		for (Iterator<Object2IntMap.Entry<ResourceLocation>> iterator = Object2IntMaps.fastIterator(recipesUsed); iterator.hasNext(); ) {
-			Object2IntMap.Entry<ResourceLocation> entry = iterator.next();
-			Optional<RecipeHolder<?>> optionalRecipe = recipeManager.byKey(entry.getKey());
+		for (Iterator<Object2IntMap.Entry<Identifier>> iterator = Object2IntMaps.fastIterator(recipesUsed); iterator.hasNext(); ) {
+			Object2IntMap.Entry<Identifier> entry = iterator.next();
+			Optional<RecipeHolder<?>> optionalRecipe = recipeManager.byKey(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, entry.getKey()));
 			if (optionalRecipe.isPresent()) {
 				RecipeHolder<?> recipeHolder = optionalRecipe.get();
 				list.add(recipeHolder);
 				//Validate it is actually a cooking recipe
 				if (recipeHolder.value() instanceof SmeltingRecipe recipe) {
-					createExperience(level, popVec, entry.getIntValue(), recipe.getExperience());
+					createExperience(level, popVec, entry.getIntValue(), recipe.experience());
 				}
 			}
 		}

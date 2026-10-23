@@ -41,9 +41,10 @@ public class Ignition extends PEToggleItem implements IPedestalItem, IFireProtec
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int slot, boolean isHeld) {
-		super.inventoryTick(stack, level, entity, slot, isHeld);
-		if (level.isClientSide || !hotBarOrOffHand(slot) || !(entity instanceof Player player)) {
+	public void inventoryTick(@NotNull ItemStack stack, @NotNull net.minecraft.server.level.ServerLevel level, @NotNull Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+		super.inventoryTick(stack, level, entity, slot);
+		boolean isHeld = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+		if (level.isClientSide() || !hotBarOrOffHand(slot, entity, stack) || !(entity instanceof Player player)) {
 			return;
 		}
 		if (stack.getOrDefault(PEDataComponentTypes.ACTIVE, false)) {
@@ -67,7 +68,7 @@ public class Ignition extends PEToggleItem implements IPedestalItem, IFireProtec
 	@Override
 	public <PEDESTAL extends BlockEntity & IDMPedestal> boolean updateInPedestal(@NotNull ItemStack stack, @NotNull Level level, @NotNull BlockPos pos,
 			@NotNull PEDESTAL pedestal) {
-		if (!level.isClientSide && ProjectEConfig.server.cooldown.pedestal.ignition.get() != -1) {
+		if (!level.isClientSide() && ProjectEConfig.server.cooldown.pedestal.ignition.get() != -1) {
 			if (pedestal.getActivityCooldown() == 0) {
 				DamageSource fire = level.damageSources().inFire();
 				for (Mob living : level.getEntitiesOfClass(Mob.class, pedestal.getEffectBounds())) {
@@ -96,7 +97,7 @@ public class Ignition extends PEToggleItem implements IPedestalItem, IFireProtec
 	@Override
 	public boolean shootProjectile(@NotNull Player player, @NotNull ItemStack stack, InteractionHand hand) {
 		Level level = player.level();
-		if (level.isClientSide) {
+		if (level.isClientSide()) {
 			return false;
 		}
 		EntityFireProjectile fire = new EntityFireProjectile(player, false, level);
@@ -106,7 +107,8 @@ public class Ignition extends PEToggleItem implements IPedestalItem, IFireProtec
 	}
 
 	@Override
-	public boolean canPerformAction(@NotNull ItemStack stack, @NotNull ItemAbility action) {
+	public boolean canPerformAction(@NotNull net.minecraft.world.item.ItemInstance instance, @NotNull ItemAbility action) {
+		ItemStack stack = moze_intel.projecte.utils.ItemHelper.asStack(instance);
 		return action == ItemAbilities.FIRESTARTER_LIGHT || super.canPerformAction(stack, action);
 	}
 

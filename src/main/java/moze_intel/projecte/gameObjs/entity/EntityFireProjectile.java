@@ -37,7 +37,7 @@ public class EntityFireProjectile extends NoGravityThrowableProjectile {
 	@Override
 	protected void onHitBlock(@NotNull BlockHitResult result) {
 		super.onHitBlock(result);
-		if (!level().isClientSide && getOwner() instanceof Player player) {
+		if (!level().isClientSide() && getOwner() instanceof Player player) {
 			BlockPos pos = result.getBlockPos();
 			BlockState state = level().getBlockState(pos);
 			if (state.is(Blocks.OBSIDIAN)) {
@@ -62,11 +62,11 @@ public class EntityFireProjectile extends NoGravityThrowableProjectile {
 	@Override
 	protected void onHitEntity(@NotNull EntityHitResult result) {
 		super.onHitEntity(result);
-		if (!level().isClientSide && getOwner() instanceof Player player) {
+		if (!level().isClientSide() && getOwner() instanceof Player player) {
 			ItemStack found = PlayerHelper.findFirstItem(player, fromArcana ? PEItems.ARCANA_RING : PEItems.IGNITION_RING);
 			if (!found.isEmpty() && ItemPE.consumeFuel(player, found, 32, true)) {
 				Entity ent = result.getEntity();
-				if (ent.hurt(level().damageSources().inFire(), 5)) {
+				if (ent.hurtServer((net.minecraft.server.level.ServerLevel) level(), level().damageSources().inFire(), 5)) {
 					ent.igniteForSeconds(5);
 				}
 			}
@@ -74,13 +74,13 @@ public class EntityFireProjectile extends NoGravityThrowableProjectile {
 	}
 
 	@Override
-	public void readAdditionalSaveData(@NotNull CompoundTag compound) {
+	public void readAdditionalSaveData(@NotNull net.minecraft.world.level.storage.ValueInput compound) {
 		super.readAdditionalSaveData(compound);
-		fromArcana = compound.getBoolean("fromArcana");
+		fromArcana = compound.getBooleanOr("fromArcana", false);
 	}
 
 	@Override
-	public void addAdditionalSaveData(@NotNull CompoundTag compound) {
+	public void addAdditionalSaveData(@NotNull net.minecraft.world.level.storage.ValueOutput compound) {
 		super.addAdditionalSaveData(compound);
 		compound.putBoolean("fromArcana", fromArcana);
 	}

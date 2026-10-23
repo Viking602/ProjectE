@@ -89,11 +89,11 @@ public class ShowBagCMD {
 	private static MenuProvider createContainer(MinecraftServer server, ServerPlayer sender, UUID target, DyeColor color) throws CommandSyntaxException {
 		//Try to get the bag
 		IItemHandlerModifiable inv = loadOfflineBag(server, target, color);
-		Component name = PEItems.getBag(color).getDescription();
-		Optional<GameProfile> profileByUUID = server.getProfileCache() == null ? Optional.empty() : server.getProfileCache().get(target);
+		Component name = new net.minecraft.world.item.ItemStack(PEItems.getBag(color)).getHoverName();
+		Optional<net.minecraft.server.players.NameAndId> profileByUUID = server.services().nameToIdCache().get(target);
 		if (profileByUUID.isPresent()) {
 			//If we have a cache of the player, include their last known name in the name of the bag
-			name = PELang.SHOWBAG_NAMED.translate(name, profileByUUID.get().getName());
+			name = PELang.SHOWBAG_NAMED.translate(name, profileByUUID.get().name());
 		}
 		return getContainer(sender, name, inv, true, () -> true);
 	}
@@ -125,9 +125,9 @@ public class ShowBagCMD {
 		if (Files.exists(player) && Files.isRegularFile(player)) {
 			try (InputStream in = Files.newInputStream(player)) {
 				CompoundTag playerDat = NbtIo.readCompressed(in, NbtAccounter.unlimitedHeap());
-				if (playerDat.contains(AttachmentHolder.ATTACHMENTS_NBT_KEY, Tag.TAG_COMPOUND)) {
-					CompoundTag attachmentData = playerDat.getCompound(AttachmentHolder.ATTACHMENTS_NBT_KEY);
-					CompoundTag bagData = attachmentData.getCompound(PEAttachmentTypes.ALCHEMICAL_BAGS.getId().toString());
+				if (playerDat.contains(AttachmentHolder.ATTACHMENTS_NBT_KEY)) {
+					CompoundTag attachmentData = playerDat.getCompoundOrEmpty(AttachmentHolder.ATTACHMENTS_NBT_KEY);
+					CompoundTag bagData = attachmentData.getCompoundOrEmpty(PEAttachmentTypes.ALCHEMICAL_BAGS.getId().toString());
 					RegistryOps<Tag> serializationContext = server.registryAccess().createSerializationContext(NbtOps.INSTANCE);
 					DataResult<AlchemicalBagAttachment> result = AlchemicalBagAttachment.CODEC.parse(serializationContext, bagData);
 					if (result.isSuccess()) {
